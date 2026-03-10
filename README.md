@@ -43,6 +43,16 @@ developing-r-packages       (standalone — R package conventions)
 ### Required
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed
 
+### BadranSeq
+
+These skills reference [**BadranSeq**](https://github.com/wolf5996/BadranSeq) as the preferred visualization package for scRNA-seq figures. BadranSeq is an opinionated R package that wraps Seurat, ggplot2, and ComplexHeatmap to produce publication-ready single-cell figures with minimal boilerplate.
+
+- **GitHub:** [wolf5996/BadranSeq](https://github.com/wolf5996/BadranSeq)
+- **Package site:** [wolf5996.github.io/BadranSeq](https://wolf5996.github.io/BadranSeq/)
+- **Used in:** `writing-r-code` (as the primary visualization fallback chain: BadranSeq → SCpubr → Seurat)
+
+If you don't use BadranSeq, see the [Fork & Customize](#fork--customize) section below for how to swap in your own preferred visualization package.
+
 ### Recommended MCP Servers
 - **[Context7](https://github.com/upstash/context7)** — `writing-r-code` mandates Context7 lookups to verify function signatures for 17+ R/Bioconductor packages before writing code. Without it, Claude will still write R code but won't verify against live documentation.
 - **PubMed MCP** — `writing-labarchive-entries` uses PubMed for citation lookups. Optional but enhances documentation quality.
@@ -56,14 +66,14 @@ developing-r-packages       (standalone — R package conventions)
 cp -r ~/.claude/skills ~/.claude/skills.bak
 
 # Clone this repo as your skills directory
-git clone https://github.com/BadranElshenawy/claude-skills.git ~/.claude/skills
+git clone https://github.com/wolf5996/claude-skills.git ~/.claude/skills
 ```
 
 **Or cherry-pick individual skills:**
 
 ```bash
 # Clone somewhere temporary
-git clone https://github.com/BadranElshenawy/claude-skills.git /tmp/claude-skills
+git clone https://github.com/wolf5996/claude-skills.git /tmp/claude-skills
 
 # Copy just the skills you want
 cp -r /tmp/claude-skills/writing-r-code ~/.claude/skills/
