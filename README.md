@@ -36,7 +36,13 @@ developing-r-packages       (standalone — R package conventions)
 md-to-html                  (standalone — converts .md → .qmd → .html via Quarto)
 ```
 
-**Reading order for newcomers:** 1. `creating-analysis-projects` — the overall project architecture 2. `writing-r-code` — code patterns used everywhere 3. `writing-qmd-scientific` — how to document analysis pipelines 4. `developing-r-packages` and `writing-labarchive-entries` — advanced/specialized 5. `md-to-html` — converting finished markdown to polished HTML
+**Reading order for newcomers:**
+
+1. `creating-analysis-projects` — the overall project architecture
+2. `writing-r-code` — code patterns used everywhere
+3. `writing-qmd-scientific` — how to document analysis pipelines
+4. `developing-r-packages` and `writing-labarchive-entries` — advanced/specialized
+5. `md-to-html` — converting finished markdown to polished HTML
 
 ## Prerequisites
 
