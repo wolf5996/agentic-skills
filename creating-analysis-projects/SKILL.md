@@ -226,16 +226,18 @@ write/tables/*
 
 **Why this works:** `.gitkeep` is just an empty file — git has no special treatment for it. The name is a community convention. Once real data files land in the directory, `.gitkeep` sits there harmlessly and can be deleted if desired.
 
-**Why whitelist rules need both `!dir/` and `!dir/**`:**
+**Why `!*/` is required:** The `*` rule ignores everything, including directories. When git hits an ignored directory it stops traversing into it entirely — so `!read/.gitkeep` alone would never fire because git would never enter `read/` to see it. The `!*/` rule un-ignores all directories globally, allowing git to walk into all of them. Once inside, `read/*` + `!read/.gitkeep` controls what gets tracked.
 
-When git hits an ignored directory it stops traversing into it entirely — it never evaluates rules about the directory's contents. So you always need two lines:
+**Why tracked `scripts/` needs both `!scripts/` and `!scripts/**`:**
+
+`!*/` already lets git traverse `scripts/`, but it doesn't un-ignore the files inside. You still need:
 
 ```gitignore
-!scripts/    # step 1: tell git to open the door and walk in
-!scripts/**  # step 2: un-ignore everything found inside at any depth
+!scripts/    # un-ignore the directory itself (redundant with !*/ but explicit)
+!scripts/**  # un-ignore everything found inside at any depth
 ```
 
-`!scripts/**` alone does nothing because git never enters the ignored directory to see the files. And `*` (single wildcard) only matches one level deep — `**` is needed for recursive un-ignoring.
+`!scripts/**` alone is not enough without `!*/` or `!scripts/` first — git won't enter an ignored directory. And `*` (single wildcard) only matches one level deep — `**` is needed for recursive un-ignoring.
 
 ### scripts/.gitignore — script-specific ignores
 
