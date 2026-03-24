@@ -7,7 +7,7 @@ description: Use when setting up a new R or bioinformatics analysis project, sca
 
 ## Overview
 
-Scaffold R/bioinformatics analysis projects with a strict separation between code (version-controlled) and data/outputs (not tracked). Code lives in a `scripts/` subdirectory with its own git repo. Every notebook is self-contained. Every convention is enforced by structure, not discipline.
+Scaffold R/bioinformatics analysis projects with a strict separation between code (version-controlled) and data/outputs (not tracked). Git lives at the **project root** with a whitelist `.gitignore` that tracks only `scripts/`. Every notebook is self-contained. Every convention is enforced by structure, not discipline.
 
 **REQUIRED SUB-SKILLS:**
 - Use `writing-r-code` for all R code generation
@@ -20,12 +20,13 @@ Scaffold R/bioinformatics analysis projects with a strict separation between cod
 The project uses a **read / write / checkpoints** triad as its core data flow architecture. This is non-negotiable — every project follows this layout:
 
 ```
-project_name/
+project_name/                      # ← Git repo lives HERE
+├── .git/
+├── .gitignore                     # Whitelist: tracks only scripts/
 ├── read/                          # Raw input data — IMMUTABLE, never modified by code
 │   └── reference/                 # Reference files (marker lists, GTFs, gene sets, etc.)
-├── scripts/                       # ← Git repo lives HERE, not at project root
-│   ├── .git/
-│   ├── .gitignore
+├── scripts/                       # ← All tracked code lives here
+│   ├── .gitignore                 # Script-specific ignores (rendered outputs, caches, etc.)
 │   ├── README.md
 │   ├── project-name.Rproj         # RStudio project file (sets working directory)
 │   ├── utils.R                    # Shared helper functions
@@ -46,13 +47,14 @@ These three directories define how data flows through the project:
 - **`checkpoints/`** — serialised R objects (`.rds`) that pass state between pipeline steps. Each notebook reads its predecessor's checkpoint and writes its own. These are the pipeline's internal handoff mechanism. Named with step prefix: `01-merged-harmony.rds`, `02-annotated.rds`. Within a notebook, intermediate checkpoints enable self-contained chunks: `04-fibro-subset.rds` → `04-fibro-sct.rds` → `04-fibro-harmony.rds` → `04-fibro-states.rds`.
 - **`write/`** — all human-facing outputs. Split into `write/figures/` (plots saved via `safe_ggsave()`) and `write/tables/` (CSVs, Excel files saved via `readr::write_csv()`, `openxlsx`). Everything is prefixed by step number so you can tell at a glance which notebook produced it.
 
-### Why git only in scripts/
+### Why git at root with a scripts/ whitelist
 
+- Git at root means one repo per project — no nested `.git/` confusion, clean `git clone` into the project root
+- The whitelist `.gitignore` (`/*` then `!/scripts`) means only `scripts/` is ever tracked — everything else is silently ignored by default
+- Adding new data directories (`read/sample-2/`, `outputs/`) never requires updating `.gitignore`
 - `read/` is immutable raw data — large, binary, doesn't belong in git
 - `checkpoints/` are ephemeral intermediates that change every re-run
 - `write/` contains generated outputs that are reproducible from code
-- The user should never have to `.gitignore` new data folders
-- Anything done at the parent level (adding folders, moving data) never interferes with version control
 
 ## Naming Conventions
 
@@ -162,15 +164,30 @@ Section descriptions use **bullet points with bold key terms**, never paragraphs
 
 ## Version Control Setup
 
-### Initialise git inside scripts/
+### Initialise git at project root
 
 ```bash
-cd scripts/
+cd project_name/
 git init
 git branch -m main
 ```
 
-### .gitignore template
+### Root .gitignore — whitelist approach
+
+Ignores everything by default; only `scripts/` is tracked:
+
+```gitignore
+# Ignore everything
+/*
+/.*
+
+# Whitelist: track only scripts/
+!/scripts
+```
+
+### scripts/.gitignore — script-specific ignores
+
+Place a second `.gitignore` inside `scripts/` to exclude rendered outputs and caches:
 
 ```gitignore
 # Rendered outputs
@@ -230,8 +247,8 @@ The README must clearly separate tracked vs untracked content:
 ### GitHub repo creation
 
 ```bash
-cd scripts/
-git add .
+cd project_name/
+git add scripts/
 git commit -m "Initial commit: <N>-step <analysis-type> pipeline with shared utils"
 gh repo create <descriptive-project-name> --private --source=. --push \
   --description "<one-line description of the analysis>"
@@ -250,8 +267,7 @@ When setting up a new project:
 5. Create `.Rproj` in `scripts/`
 6. Create `utils.R` in `scripts/` with shared helpers
 7. Create numbered QMD notebooks in `scripts/`
-8. Initialise git in `scripts/` only
-9. Create `.gitignore`
+8. Initialise git at project root; create root `.gitignore` (whitelist) and `scripts/.gitignore` (script-specific ignores)
 10. Write `README.md`
 11. Create GitHub repo and push
 
@@ -259,7 +275,7 @@ When setting up a new project:
 
 | Mistake | Correct Approach |
 |---------|-----------------|
-| `git init` at project root | `git init` inside `scripts/` only |
+| `git init` inside `scripts/` | `git init` at project root with whitelist `.gitignore` |
 | Defining path variables upfront | Paths inline at every function call |
 | Paragraph prose in QMD sections | Bullet points with bold key terms |
 | Generic variable names (`obj`, `df`, `p`) | Descriptive names (`seu_fibro`, `composition_df`, `plot_umap_clusters`) |
