@@ -36,11 +36,6 @@ format:
     embed-resources: true
     self-contained: true
     title-block-banner: true
-engine: knitr
-execute:
-  eval: false
-  warning: false
-  message: false
 ---
 ```
 

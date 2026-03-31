@@ -20,7 +20,7 @@ Skills are markdown files (`SKILL.md`) that teach Claude Code domain-specific co
 | **writing-labarchive-entries** | Lab Notebooks | Verbose, structured lab documentation with numbered sections. Four entry types: Reference Datasets, Analysis Pipelines, Tool Evaluations, Educational Notes. PubMed MCP integration for citations. |
 | **developing-r-packages** | R Packages | Full R package lifecycle following Wickham & Bryan's *R Packages*. roxygen2 documentation, testthat testing, semantic versioning, GitHub Actions CI/CD, pkgdown sites. |
 | **tailoring-applications** | Job Applications | Full pipeline for tailoring CVs and cover letters from job adverts. Parses job postings (text, URL, or PDF), scaffolds application directories, and produces tailored application documents for academic and industry roles. |
-| **md-to-html** | Document Conversion | Converts markdown files into self-contained HTML documents via Quarto. Wraps `.md` content in a `.qmd` with a preferred YAML header (darkly theme, TOC, embedded resources) and renders with `quarto render`. Preserves content as-is—conversion only, no restructuring. |
+| **md-to-html** | Document Conversion | Converts markdown files into self-contained HTML documents via Quarto. Wraps `.md` content in a `.qmd` with a preferred YAML header (darkly theme, TOC, embedded resources) and renders with `quarto render` using the native Quarto engine (not knitr). Preserves content as-is—conversion only, no restructuring. |
 
 ## Skill Dependencies
 
