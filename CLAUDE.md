@@ -17,14 +17,16 @@ This repo (`wolf5996/claude-skills`) contains opinionated Claude Code skills for
 │   ├── tailoring-applications/SKILL.md
 │   ├── writing-labarchive-entries/SKILL.md
 │   ├── writing-qmd-scientific/SKILL.md
-│   └── writing-r-code/SKILL.md
+│   ├── writing-r-code/SKILL.md
+│   └── writing-commit-messages/SKILL.md
 ├── creating-analysis-projects -> personal_skills/creating-analysis-projects
 ├── developing-r-packages -> personal_skills/developing-r-packages
 ├── md-to-html -> personal_skills/md-to-html
 ├── tailoring-applications -> personal_skills/tailoring-applications
 ├── writing-labarchive-entries -> personal_skills/writing-labarchive-entries
 ├── writing-qmd-scientific -> personal_skills/writing-qmd-scientific
-└── writing-r-code -> personal_skills/writing-r-code
+├── writing-r-code -> personal_skills/writing-r-code
+└── writing-commit-messages -> personal_skills/writing-commit-messages
 ```
 
 ## Symlink Requirement
