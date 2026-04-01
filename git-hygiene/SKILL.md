@@ -1,9 +1,9 @@
 ---
-name: writing-commit-messages
+name: git-hygiene
 description: Use when making git commits, writing commit messages, creating branches, or managing version control history. Use when the user asks to commit, when a task is complete and needs committing, or when reviewing commit message style. Also use when rebasing, squashing, or rewriting commit history.
 ---
 
-# Writing Commit Messages
+# Git Hygiene
 
 ## Overview
 
