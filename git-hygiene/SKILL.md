@@ -107,3 +107,21 @@ Before every commit:
 | Period at end | `fix: correct typo.` → `fix: correct typo` |
 | Past tense | `fixed`, `added` → `fix`, `add` |
 | Bundled changes | Split into atomic commits |
+
+## .gitignore
+
+For most projects, use a **whitelisting approach** to avoid accidentally committing generated files:
+
+```
+# Track everything by default
+*
+# Negate patterns to whitelist specific files/directories
+!*/
+!.gitignore
+!.Rproj
+!README.md
+!*.py
+!*.qmd
+```
+
+This is more secure than blacklisting (which can miss new file types). Use blacklisting only when the project has many unpredictable generated files (e.g., LaTeX build artefacts).
