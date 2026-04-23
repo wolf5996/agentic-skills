@@ -39,18 +39,22 @@ format:
 ---
 ```
 
-### 3. Preserve the writing
+### 3. Run md-format on the source
 
-- Copy all markdown content below the YAML header **unchanged**
+Before copying content into the `.qmd`, invoke the `md-format` skill on the source `.md` file to catch and fix any formatting issues (e.g. bullet lists missing a blank line before them that would collapse horizontally in the rendered output). Apply all fixes to the source before proceeding.
+
+### 4. Preserve the writing
+
+- Copy all markdown content below the YAML header **unchanged** (after `md-format` fixes have been applied)
 - Do **not** convert prose to bullet points or alter structure — this skill preserves content as-is
 - The `writing-qmd-scientific` skill governs QMD authoring conventions; this skill is only for conversion
 
-### 4. Fix line breaks
+### 6. Fix line breaks
 
 - Consecutive bold metadata lines (e.g. `**Date:**`, `**Presenter:**`) need a trailing `\` to render on separate lines in Quarto
 - Add `\` at the end of each such line except the last
 
-### 5. Render
+### 7. Render
 
 ```bash
 quarto render filename.qmd

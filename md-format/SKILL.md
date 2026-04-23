@@ -1,5 +1,5 @@
 ---
-name: markdown-formatting
+name: md-format
 description: Use when writing or editing .md, .rmd, or .qmd files. Apply when authoring lists, headings, or structured content rendered by pandoc — including Hugo (via hugodown), Quarto, or plain markdown pipelines. Enforces formatting patterns that ensure correct vertical rendering of bullet lists and other structural elements across all three document types.
 ---
 

@@ -22,7 +22,7 @@ Skills are markdown files (`SKILL.md`) that teach Claude Code domain-specific co
 | **tailoring-applications** | Job Applications | Full pipeline for tailoring CVs and cover letters from job adverts. Parses adverts (text, URL, or PDF), scaffolds application directories, drafts product-market-fit cover letters and tailored CVs, renders to PDF, and drafts PI outreach emails. Covers academic and industry roles. |
 | **md-to-html** | Document Conversion | Converts markdown files into self-contained HTML documents via Quarto. Wraps `.md` content in a `.qmd` with a preferred YAML header (darkly theme, TOC, embedded resources) and renders with `quarto render` using the native Quarto engine (not knitr). Preserves content as-is—conversion only, no restructuring. |
 | **git-hygiene** | Version Control | Conventional Commits format with scoped types, lowercase subjects, and granular atomic commits. Covers type selection (`feat`, `fix`, `docs`, `style`, `refactor`, `chore`, `ci`, `test`), optional scopes, branching conventions, and pre-commit checklist. |
-| **markdown-formatting** | Writing | Formatting rules for `.md`, `.rmd`, and `.qmd` files rendered by pandoc. Enforces blank-line separation before bullet lists to prevent items collapsing horizontally. Includes verification grep commands and covers all trigger contexts (bold headings, inline emphasis labels, paragraphs ending with colons). |
+| **md-format** | Writing | Formatting rules for `.md`, `.rmd`, and `.qmd` files rendered by pandoc. Enforces blank-line separation before bullet lists to prevent items collapsing horizontally. Includes verification grep commands and covers all trigger contexts (bold headings, inline emphasis labels, paragraphs ending with colons). |
 
 ## Skill Dependencies
 
