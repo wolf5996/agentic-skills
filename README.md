@@ -1,14 +1,31 @@
-# Claude Code Skills for R & Bioinformatics
+# Agentic Skills for R & Bioinformatics
 
-Opinionated [Claude Code] skills for single-cell RNA-seq analysis, R package development, and scientific documentation. Built for bioinformatics workflows using Seurat, Bioconductor, tidyverse, and Quarto.
+Opinionated agent skills for single-cell RNA-seq analysis, R package development, and scientific documentation. Built for bioinformatics workflows using Seurat, Bioconductor, tidyverse, and Quarto.
 
-  [Claude Code]: https://docs.anthropic.com/en/docs/claude-code
+These skills encode specific conventions, patterns, and quality standards that AI coding agents follow when working on your projects. They are deliberately opinionated — fork and adapt them to your own workflow.
 
-These skills encode specific conventions, patterns, and quality standards that Claude Code follows when working on your projects. They are deliberately opinionated — fork and adapt them to your own workflow.
+## Supported Agents
 
-## What Are Claude Code Skills?
+This repository works with both **Claude Code** and **Codex**. Each tool discovers skills differently:
 
-Skills are markdown files (`SKILL.md`) that teach Claude Code domain-specific conventions. When Claude detects a relevant task (e.g., editing a `.qmd` file), it loads the matching skill and follows its rules. Skills live in `~/.claude/skills/` as subdirectories, each containing a single `SKILL.md` file.
+- **Claude Code** reads `SKILL.md` files directly from `~/.claude/skills/`, using YAML frontmatter (`name`, `description`) to determine when to load each skill.
+- **Codex** reads `SKILL.md` files from `~/.codex/skills/` and uses `agents/openai.yaml` metadata for interface display names, descriptions, and default prompts.
+
+Both tools share the same skill content (`SKILL.md`). The `agents/` subdirectories are Codex-specific and harmless to Claude Code — they are simply ignored.
+
+## What Are Skills?
+
+Skills are markdown files (`SKILL.md`) that teach an AI agent domain-specific conventions. When the agent detects a relevant task (e.g., editing a `.qmd` file), it loads the matching skill and follows its rules. Skills live in the agent's skills directory as subdirectories, each containing a `SKILL.md` file and optionally an `agents/openai.yaml` for Codex metadata.
+
+### Codex Agent Metadata
+
+Each skill may include an `agents/openai.yaml` file that provides Codex-specific UI metadata:
+
+- `display_name` — how the skill appears in Codex's interface
+- `short_description` — tooltip text shown when browsing skills
+- `default_prompt` — the prompt template Codex uses when invoking the skill
+
+Claude Code does not use these files; it reads the YAML frontmatter in `SKILL.md` directly. The `agents/` directories are committed to the shared repo so both tools stay in sync, but they only affect Codex behavior.
 
 ## Skills Overview
 
@@ -86,28 +103,24 @@ If you don't use BadranSeq, see the [Fork & Customize] section below for how to 
 
 ## Installation
 
-**Clone into your Claude Code skills directory:**
+**Clone into your skills directory:**
 
 ``` bash
-# Back up any existing skills first
-cp -r ~/.claude/skills ~/.claude/skills.bak
+# For Claude Code
+git clone https://github.com/wolf5996/agentic-skills.git ~/.claude/skills
 
-# Clone this repo as your skills directory
-git clone https://github.com/wolf5996/claude-skills.git ~/.claude/skills
+# For Codex (can be the same or a separate clone)
+git clone https://github.com/wolf5996/agentic-skills.git ~/.codex/skills
 ```
 
-**Or cherry-pick individual skills:**
+Both tools can point to the same GitHub repo. The shared skill content stays in sync automatically.
+
+**Cherry-pick individual skills:**
 
 ``` bash
-# Clone somewhere temporary
-git clone https://github.com/wolf5996/claude-skills.git /tmp/claude-skills
-
-# Copy just the skills you want
-cp -r /tmp/claude-skills/writing-r-code ~/.claude/skills/
-cp -r /tmp/claude-skills/writing-qmd-scientific ~/.claude/skills/
-
-# Clean up
-rm -rf /tmp/claude-skills
+git clone https://github.com/wolf5996/agentic-skills.git /tmp/agentic-skills
+cp -r /tmp/agentic-skills/writing-r-code ~/.claude/skills/
+rm -rf /tmp/agentic-skills
 ```
 
 ## Fork & Customize
@@ -134,7 +147,7 @@ This repository is a work in progress. New skills are added as workflows mature.
 
 **To add a skill:**
 
-1.  Create a new directory: `~/.claude/skills/<skill-name>/`
+1.  Create a new directory: `personal_skills/<skill-name>/`
 
 2.  Add a `SKILL.md` file with YAML frontmatter:
 
@@ -147,9 +160,18 @@ This repository is a work in progress. New skills are added as workflows mature.
 
 3.  Write the skill content following the patterns in existing skills
 
-4.  Update this README's skills table and dependency graph
+4.  If using Codex, optionally add `agents/openai.yaml` with display metadata
 
-5.  Commit and push
+5.  Create symlinks in both agents' skills directories:
+
+    ``` bash
+    ln -s personal_skills/<skill-name> ~/.claude/skills/<skill-name>
+    ln -s personal_skills/<skill-name> ~/.codex/skills/<skill-name>
+    ```
+
+6.  Update this README's skills table and dependency graph
+
+7.  Commit and push
 
 **Naming convention:** lowercase, hyphen-separated (e.g., `writing-r-code`, `creating-analysis-projects`)
 

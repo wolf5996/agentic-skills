@@ -4,7 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Purpose
 
-This repo (`wolf5996/claude-skills`) contains opinionated Claude Code skills for R/bioinformatics workflows. Each skill is a directory with a single `SKILL.md` file that teaches Claude domain-specific conventions.
+This repo (`wolf5996/agentic-skills`) contains opinionated skills for R/bioinformatics workflows that work with both **Claude Code** and **Codex**. Each skill is a directory with a single `SKILL.md` file that teaches domain-specific conventions. Skills are tool-agnostic — both Claude Code and Codex read `SKILL.md` for workflow guidance.
+
+## Dual-Tool Support
+
+This repository is cloned into both `~/.claude/skills/personal_skills/` and `~/.codex/skills/personal_skills/`, with both local repos pushing to the same GitHub remote. Shared skill content (`SKILL.md`, `references/`, etc.) is identical across both installations.
+
+- **Claude Code** reads `SKILL.md` YAML frontmatter (`name`, `description`) directly for skill discovery and triggering.
+- **Codex** uses `agents/openai.yaml` files for interface metadata (display name, short description, default prompt). These are Codex-specific but tracked in the shared repo so both installations stay in sync. Claude Code ignores `agents/` directories entirely.
 
 ## Repo Structure
 
@@ -18,7 +25,10 @@ This repo (`wolf5996/claude-skills`) contains opinionated Claude Code skills for
 │   ├── writing-labarchive-entries/SKILL.md
 │   ├── writing-qmd-scientific/SKILL.md
 │   ├── writing-r-code/SKILL.md
-│   └── git-hygiene/SKILL.md
+│   ├── git-hygiene/SKILL.md
+│   ├── md-format/SKILL.md
+│   ├── hugo-blog/SKILL.md
+│   └── recommendation-letter-workflow/SKILL.md
 ├── creating-analysis-projects -> personal_skills/creating-analysis-projects
 ├── developing-r-packages -> personal_skills/developing-r-packages
 ├── md-to-html -> personal_skills/md-to-html
@@ -26,7 +36,10 @@ This repo (`wolf5996/claude-skills`) contains opinionated Claude Code skills for
 ├── writing-labarchive-entries -> personal_skills/writing-labarchive-entries
 ├── writing-qmd-scientific -> personal_skills/writing-qmd-scientific
 ├── writing-r-code -> personal_skills/writing-r-code
-└── git-hygiene -> personal_skills/git-hygiene
+├── git-hygiene -> personal_skills/git-hygiene
+├── md-format -> personal_skills/md-format
+├── hugo-blog -> personal_skills/hugo-blog
+└── recommendation-letter-workflow -> personal_skills/recommendation-letter-workflow
 ```
 
 ## Symlink Requirement
@@ -44,8 +57,9 @@ ln -s personal_skills/<skill-name> <skill-name>
 
 1. Create `<skill-name>/SKILL.md` in this repo with YAML frontmatter (`name`, `description`)
 2. Create symlink: `ln -s personal_skills/<skill-name> ~/.claude/skills/<skill-name>`
-3. Update `README.md`: add to the skills table and dependency graph
-4. Naming convention: lowercase, hyphen-separated (e.g., `writing-r-code`)
+3. If Codex support is desired, create `<skill-name>/agents/openai.yaml` with interface metadata
+4. Update `README.md`: add to the skills table and dependency graph
+5. Naming convention: lowercase, hyphen-separated (e.g., `writing-r-code`)
 
 ## Editing Skills
 
