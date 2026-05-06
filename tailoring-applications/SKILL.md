@@ -527,8 +527,10 @@ Computational biology for liver disease:
 - DPhil Oncology, University of Oxford (2020-2024)
 - MSci Pharmacology, University of Bristol (First Class Honours, 2016-2020) — Neuropharmacology focus; master's research at Janssen R&D, Belgium (mouse models of neurodegeneration, gait analysis for therapeutic efficacy assessment)
 
-### Teaching
+### Teaching & Science Communication
 
+- AI Ambassador, AI Competency Centre, University of Oxford (2025–present) — organises practical training events on AI adoption for researchers
+- Event Organiser & Lead Presenter, "Agents for Research: A Live Showcase of Agentic AI Tools" (April 2026) — university-wide event attracting 120+ sign-ups (~75 in-person), ranking among the top 3 most-attended events in the AI Competency Centre's history. Delivered a 20-minute presentation on agentic AI skills architecture; coordinated 7 demonstrators across two thematic blocks. No prior coding experience required from attendees.
 - Course Lead Instructor, Single-cell Data Analysis (CIT690), Nile University, Egypt (2025)
 - Workshop Instructor, Wellcome Connecting Science, Sanger Institute (2023)
 - Open-access teaching materials on GitHub
