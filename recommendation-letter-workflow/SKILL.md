@@ -1,6 +1,6 @@
 ---
 name: recommendation-letter-workflow
-description: Use when creating or maintaining a repository of recommendation letters for applications, especially Quarto-based `.qmd` letters rendered to PDF. Use for bootstrapping a new repo, adding a new institution folder, editing an existing letter, or rendering final PDFs from application-specific materials.
+description: Use when creating or maintaining a repository of recommendation letters for applications, especially Quarto-based .qmd letters rendered to PDF. Use for bootstrapping a new repo, adding a new institution folder, editing an existing letter, or rendering final PDFs from application-specific materials.
 ---
 
 # Recommendation Letter Workflow
@@ -11,7 +11,7 @@ Use this skill for the full recommendation-letter pipeline: repository setup, da
 
 - A new recommendation-letter repository needs to be created.
 - An existing repository needs a new institution/application folder.
-- A `.qmd` letter needs to be edited, rendered, or archived.
+- A .qmd letter needs to be edited, rendered, or archived.
 - Supporting application material needs to be turned into a referee letter or questionnaire answer.
 
 ## Core Workflow
@@ -37,6 +37,10 @@ Use this skill for the full recommendation-letter pipeline: repository setup, da
 - For new work, create the repository structure, template, application folder, `qmd`, and `description.qmd`.
 - For existing work, update only the relevant dated folder and its rendered PDF.
 - Prefer concise, reusable text that can be adapted across institutions without inventing new facts.
+
+## Additional Guidelines
+
+For letter content quality standards (section limits, specificity rules, superlative caps, and formatting constraints), see [editorial guidelines](references/editorial-guidelines.md).
 
 ## If You Need More Detail
 
