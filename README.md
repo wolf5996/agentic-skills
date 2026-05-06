@@ -41,6 +41,7 @@ Claude Code does not use these files; it reads the YAML frontmatter in `SKILL.md
 | **git-hygiene** | Version Control | Conventional Commits format with scoped types, lowercase subjects, and granular atomic commits. Covers type selection (`feat`, `fix`, `docs`, `style`, `refactor`, `chore`, `ci`, `test`), optional scopes, branching conventions, and pre-commit checklist. |
 | **md-format** | Writing | Formatting rules for `.md`, `.rmd`, and `.qmd` files rendered by pandoc. Enforces blank-line separation before bullet lists to prevent items collapsing horizontally. Includes verification grep commands and covers all trigger contexts (bold headings, inline emphasis labels, paragraphs ending with colons). |
 | **hugo-blog** | Publishing | End-to-end workflow for publishing posts on the Hugo personal blog. Covers the dual-file `.rmd`/`.md` pattern, hugodown rendering, file naming, YAML front matter, README sync before every push, commit message format, and common mistakes. |
+| **recommendation-letter-workflow** | Academic Applications | Full pipeline for creating and maintaining recommendation letters for PhD and postdoc applications. Quarto-based `.qmd` sources rendered to PDF. Enforces 5-section structure, specificity rules (concrete examples per section), superlative caps, programme-tailored closing sentences, and 2-page maximum length. |
 
 ## Skill Dependencies
 
