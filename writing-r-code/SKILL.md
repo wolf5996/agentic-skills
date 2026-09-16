@@ -81,9 +81,47 @@ seu <- seu[, seu$nFeature_RNA > 200 & seu$nFeature_RNA < 5000]
 - Convert to `SingleCellExperiment` via `as.SingleCellExperiment()` for Bioconductor workflows
 - Store cell type labels in `sce$label` for SingleR compatibility
 
+## Setup Chunk — One Per Script
+
+**Every script opens with a single `setup` chunk** that declares what holds for the whole document: the `conflicted` preferences and every output directory the script writes to. These are **never** repeated in individual chunks.
+
+```r
+#| label: setup
+
+# Libraries ----------
+library(conflicted)
+
+# Conflicts ----------
+conflicts_prefer(
+  dplyr::filter, dplyr::count, dplyr::rename, dplyr::slice,
+  dplyr::first, dplyr::desc, dplyr::lag,
+  purrr::reduce,
+  base::intersect, base::setdiff, base::union, base::setequal,
+  base::unname, base::as.factor, base::Position,
+  .quiet = TRUE
+)
+
+# Output directories ----------
+dir.create("../checkpoints", recursive = TRUE, showWarnings = FALSE)
+
+dir.create("../write/figures/01-processing-pipeline",
+           recursive = TRUE, showWarnings = FALSE)
+
+dir.create("../write/tables/01-processing-pipeline",
+           recursive = TRUE, showWarnings = FALSE)
+```
+
+Rules:
+
+- **Placement**: after the `## Context` and `## Checkpoints` prose sections, before the first analysis section. Give it its own `## Setup` heading with the usual bullet prose
+- **Visibility**: a normal, visible chunk. Do **not** use `include: false` — the conflict preferences are a methodological choice and belong in the rendered document
+- **Conflicts**: declare the union of everything the script attaches anywhere, not just what the first chunk needs. `library()` calls accumulate across a session, so a later chunk sees conflicts its own library list does not explain. `conflicts_prefer()` registers for the session, so once is enough
+- **Directories**: every directory any chunk writes to, listed once. `dir.create()` with `showWarnings = FALSE` is idempotent
+- **`library(conflicted)` still appears in each chunk's library block.** The preference block does not, but the `library()` call does, so a chunk run without setup fails loudly on a masked verb rather than resolving it silently
+
 ## Self-Contained Code Chunks
 
-Every code chunk must be independently executable. Follow this pattern.
+Every code chunk must be independently executable **once the setup chunk has run**. Follow this pattern.
 
 **Processing chunk** (writes a checkpoint — flat `checkpoints/` layout):
 
@@ -123,9 +161,6 @@ library(readr)
 # Inputs ----------
 seu <- read_rds("../checkpoints/01-dataset-clustered.rds")
 
-dir.create("../write/figures/01-processing-pipeline",
-           recursive = TRUE, showWarnings = FALSE)
-
 # Processing ----------
 plot_umap <- do_UmapPlot(seu, group.by = "celltype")
 
@@ -135,8 +170,8 @@ ggsave("../write/figures/01-processing-pipeline/01-umap-celltype.pdf",
 ```
 
 Rules:
-- **Libraries**: Declare all `library()` calls at the top of each chunk
-- **Inputs**: Load checkpoint or data files explicitly, and `dir.create()` the per-script output subdir
+- **Libraries**: Declare all `library()` calls at the top of each chunk, `library(conflicted)` included. The `conflicts_prefer()` block lives in the setup chunk, never here
+- **Inputs**: Load checkpoint or data files explicitly. No `dir.create()` — that is the setup chunk's job
 - **Processing**: The analysis code
 - **Outputs**: Save checkpoint to flat `../checkpoints/` OR write figures / tables to `../write/figures/<NN-script-slug>/` and `../write/tables/<NN-script-slug>/` (see `creating-analysis-projects` for the per-script subdir convention)
 
@@ -196,10 +231,6 @@ Do **NOT** use banner-style comments:
 library(BadranSeq)
 library(patchwork)
 
-# Output dir (per-script subdir under write/figures/) ----------
-dir.create("../write/figures/01-processing-pipeline",
-           recursive = TRUE, showWarnings = FALSE)
-
 # UMAP by cell type ----------
 p1 <- do_UmapPlot(seu, group.by = "celltype")
 
@@ -247,5 +278,7 @@ ggsave("../write/figures/01-processing-pipeline/01-overview.pdf",
 | Forgetting `JoinLayers()` before merge operations | Check layer state with `Layers(seu)` first |
 | Not saving checkpoints after major steps | Every pipeline stage gets a checkpoint |
 | Using SCpubr/Seurat for plots BadranSeq can handle | BadranSeq first — SCpubr/Seurat only as fallback |
-| `ggsave("../write/figures/foo.pdf", …)` fails with `Cannot find directory` | Each chunk must `dir.create("../write/figures/<NN-script-slug>", recursive = TRUE, showWarnings = FALSE)` before `ggsave`; outputs land in per-script subdirs (see `creating-analysis-projects`) |
+| `ggsave("../write/figures/foo.pdf", …)` fails with `Cannot find directory` | The setup chunk must `dir.create()` every output directory the script writes to; outputs land in per-script subdirs (see `creating-analysis-projects`) |
+| Repeating `conflicts_prefer()` or `dir.create()` in every chunk | Both belong in the one `setup` chunk at the top of the script. Repeating them is the boilerplate that buries the analysis |
+| Putting the setup chunk behind `include: false` | Keep it visible — conflict handling is a methodological choice, not boilerplate to hide |
 | Saving figures flat under `write/figures/` | Use the per-script subdir `write/figures/<NN-script-slug>/<NN-name>.pdf`; same for `write/tables/`. Checkpoints stay flat in `checkpoints/`. |

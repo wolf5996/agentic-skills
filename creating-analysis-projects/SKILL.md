@@ -89,7 +89,7 @@ Outputs use a **dual provenance** scheme: a per-script subdirectory groups every
   - `../write/figures/02-tables-visualisations/02-hypoxia-marker-violins.pdf`
   - `../write/figures/02-tables-visualisations/02-condition-marker-heatmap.pdf`
   - `../write/tables/02-tables-visualisations/02-condition-markers-significant.csv`
-- The chunk that writes them must `dir.create("../write/figures/02-tables-visualisations", recursive = TRUE, showWarnings = FALSE)` first (see `writing-r-code` for the chunk template)
+- The script's `setup` chunk `dir.create()`s these directories once, at the top of the document (see `writing-r-code` for the setup chunk template)
 
 **Step-prefixed filenames** inside the subdirectory:
 - Figures: `01-elbow-pca.pdf`, `02-umap-singler.pdf`
@@ -159,9 +159,35 @@ Helper functions used across multiple notebooks go in `utils.R`:
 - Functions are grouped by category with `# Category ----------` headers
 - No `rm(list = ls())` or side effects — pure utility functions only
 
+### Setup chunk
+
+Every notebook opens with one `setup` chunk, under its own `## Setup` heading, holding the `conflicted` preferences and every output directory the script writes to. See `writing-r-code` for the full template.
+
+```r
+# Libraries ----------
+library(conflicted)
+
+# Conflicts ----------
+conflicts_prefer(
+  dplyr::filter, dplyr::count, dplyr::rename, dplyr::slice,
+  purrr::reduce,
+  base::intersect, base::setdiff, base::union, base::setequal,
+  .quiet = TRUE
+)
+
+# Output directories ----------
+dir.create("../checkpoints", recursive = TRUE, showWarnings = FALSE)
+
+dir.create("../write/figures/02-second-step",
+           recursive = TRUE, showWarnings = FALSE)
+
+dir.create("../write/tables/02-second-step",
+           recursive = TRUE, showWarnings = FALSE)
+```
+
 ### Self-contained code chunks
 
-Every code chunk must be independently runnable. Follow the pattern from `writing-r-code`. **Processing chunks** save intermediate checkpoints; **visualisation chunks** load the latest checkpoint, `dir.create()` the per-script output subdirectory, and save figures into it.
+Every code chunk must be independently runnable **once the setup chunk has run**. Follow the pattern from `writing-r-code`. **Processing chunks** save intermediate checkpoints; **visualisation chunks** load the latest checkpoint and save figures into the per-script output subdirectory that setup already created.
 
 Processing chunk (writes to flat `checkpoints/`):
 
@@ -195,9 +221,6 @@ source("utils.R")
 
 # Inputs ----------
 seu <- readr::read_rds("../checkpoints/01-normalized.rds")
-
-dir.create("../write/figures/02-second-step",
-           recursive = TRUE, showWarnings = FALSE)
 
 # Processing ----------
 plot_umap <- do_UmapPlot(seu, group.by = "celltype")
@@ -379,7 +402,7 @@ When setting up a new project:
 4. Archive any existing scripts to `.original_student_code/` or similar hidden directory
 5. Create `.Rproj` in `scripts/`
 6. Create `utils.R` in `scripts/` with shared helpers
-7. Create numbered QMD notebooks in `scripts/`
+7. Create numbered QMD notebooks in `scripts/`, each opening with a `## Setup` section and its `setup` chunk
 8. Initialise git at project root; create root `.gitignore` (whitelist) and `scripts/.gitignore` (script-specific ignores)
 10. Write `README.md`
 11. Create GitHub repo and push
@@ -395,7 +418,8 @@ When setting up a new project:
 | Chunks that depend on previous chunk state | Every chunk loads its own inputs from disk |
 | Output files without step prefix | Always prefix: `01-`, `02-`, etc. |
 | Saving figures / tables flat under `write/figures/` or `write/tables/` | Use per-script subdirs: `write/figures/<NN-script-slug>/<NN-name>.pdf` and `write/tables/<NN-script-slug>/<NN-name>.csv` |
-| Forgetting to `dir.create()` the per-script output subdir | Each visualisation chunk runs `dir.create("../write/figures/<NN-script-slug>", recursive = TRUE, showWarnings = FALSE)` right after the `# Inputs ----------` block |
+| Forgetting to `dir.create()` the per-script output subdir | The script's `setup` chunk creates every output directory it writes to, once |
+| Scattering `conflicts_prefer()` and `dir.create()` across every chunk | Both belong in the single `setup` chunk at the top of the notebook |
 | Per-script subdirs under `checkpoints/` | Checkpoints stay **flat** because downstream notebooks all read them: `checkpoints/02-annotated.rds`, not `checkpoints/02-second-step/02-annotated.rds` |
 | `readRDS()`/`saveRDS()` | `readr::read_rds()`/`readr::write_rds()` |
 | `%>%` magrittr pipe | `\|>` native pipe |

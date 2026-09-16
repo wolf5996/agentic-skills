@@ -107,9 +107,17 @@ Rules for prose:
 
 - **Naming**: hashpipe options use kebab-case (`fig-width`, `fig-height`, `fig-cap`) rather than legacy dot-separated names (`fig.width`)
 
+### Setup Chunk
+
+- **Every document opens with one `setup` chunk** under its own `## Setup` heading, placed after the `## Context` and `## Checkpoints` prose and before the first analysis section
+- **It holds**: `library(conflicted)`, the `conflicts_prefer()` block, and a `dir.create()` for every output directory the document writes to
+- **Nothing else repeats them.** Individual chunks keep `library(conflicted)` in their library block but never redeclare the preferences or create directories
+- **Visible, not hidden** — no `include: false`. The conflict handling is a documented choice like any other
+- See `writing-r-code` for the full template and the reasoning
+
 ### Code Chunks
 
-- **Code chunks** are self-contained units
+- **Code chunks** are self-contained units, given that `## Setup` has run
 - **Pattern**: follows the `writing-r-code` skill (Libraries → Inputs → Processing → Outputs)
 - **Internal formatting**: `# Section ----------` separators
 
@@ -235,7 +243,7 @@ project_name/
 
 - `figures/` and `tables/` subdirectories are named after the qmd basename (without `.qmd`); files inside still carry the matching `NN-` step prefix
 - `checkpoints/` stays flat — downstream notebooks all read upstream checkpoints, so subdirs would obscure the shared-state nature
-- Every chunk that writes a figure or table must `dir.create("../write/figures/<NN-script-slug>", recursive = TRUE, showWarnings = FALSE)` in its Inputs block first
+- The `setup` chunk `dir.create()`s every output directory the document writes to, once. Individual chunks never create directories
 
 - **Relative paths** in code always reference from `scripts/`:
   - Input data: `../read/`
@@ -246,7 +254,8 @@ project_name/
 
 | Mistake | Correct Approach |
 |---------|-----------------|
-| Code chunk that depends on previous chunk's state | Each chunk loads its own checkpoint |
+| Code chunk that depends on previous chunk's state | Each chunk loads its own checkpoint. The one allowed dependency is the `setup` chunk |
+| Repeating `conflicts_prefer()` or `dir.create()` in every chunk | Both live in the single `setup` chunk at the top of the document |
 | No rationale for parameter choices | Every parameter gets a justification |
 | Writing paragraphs outside code chunks | **Always use bullet points** — no paragraph prose, ever |
 | Prose that describes what the code does | Prose explains **why** — the code shows what |
