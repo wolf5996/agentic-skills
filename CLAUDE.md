@@ -28,7 +28,8 @@ This repository is cloned into both `~/.claude/skills/personal_skills/` and `~/.
 │   ├── git-hygiene/SKILL.md
 │   ├── md-format/SKILL.md
 │   ├── hugo-blog/SKILL.md
-│   └── recommendation-letter-workflow/SKILL.md
+│   ├── recommendation-letter-workflow/SKILL.md
+│   └── write-readme/SKILL.md
 ├── creating-analysis-projects -> personal_skills/creating-analysis-projects
 ├── developing-r-packages -> personal_skills/developing-r-packages
 ├── md-to-html -> personal_skills/md-to-html
@@ -39,7 +40,8 @@ This repository is cloned into both `~/.claude/skills/personal_skills/` and `~/.
 ├── git-hygiene -> personal_skills/git-hygiene
 ├── md-format -> personal_skills/md-format
 ├── hugo-blog -> personal_skills/hugo-blog
-└── recommendation-letter-workflow -> personal_skills/recommendation-letter-workflow
+├── recommendation-letter-workflow -> personal_skills/recommendation-letter-workflow
+└── write-readme -> personal_skills/write-readme
 ```
 
 ## Symlink Requirement

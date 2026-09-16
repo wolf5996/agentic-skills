@@ -1,0 +1,4 @@
+interface:
+  display_name: "Write README"
+  short_description: "Visual, table-driven README.md for analysis repos and packages"
+  default_prompt: "Use $write-readme to write a root README.md for this repository following the fixed section structure."

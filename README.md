@@ -44,6 +44,7 @@ Claude Code does not use these files; it reads the YAML frontmatter in `SKILL.md
 | **recommendation-letter-workflow** | Academic Applications | Full pipeline for creating and maintaining recommendation letters for PhD and postdoc applications. Quarto-based `.qmd` sources rendered to PDF. Enforces 5-section structure, specificity rules (concrete examples per section), superlative caps, programme-tailored closing sentences, and 2-page maximum length. |
 | **naming-conventions** | File Organisation | Enforces kebab-case filenames with ISO 8601 dates and zero-padded sequential numbering. Used for bulk media renaming, pipeline outputs, and any file collection where lexicographic sort must match chronological or logical order. |
 | **qmd-runner** | Debugging | Per-chunk `tryCatch` runners for Quarto notebooks. Generator parses each `.qmd`, emits a sibling `.R` runner with one `tryCatch` per `{r}` chunk, and runs them in the global environment so chunk-to-chunk state-sharing matches Quarto render semantics. Surfaces every failing chunk in one pass instead of stopping at the first error, with every fix landing in the source `.qmd`. Catalogues the common Seurat / Bioconductor / biomaRt / msigdbr failure patterns and their fixes. |
+| **write-readme** | Documentation | Fixed, visual structure for root `README.md` files: centred header with badges, At a Glance table, Mermaid pipeline diagram, samples table built from real output CSVs, key design decisions with callouts, PNG figure previews rendered from PDFs with collapsible extras, annotated tracked/untracked repo tree, copy-paste reproduction block, and dependency table. |
 
 ## Skill Dependencies
 
@@ -62,6 +63,7 @@ md-to-html                  (standalone — converts .md → .qmd → .html via 
 git-hygiene                 (standalone — conventional commit format and branching)
 naming-conventions          (standalone — file naming rules; references creating-analysis-projects for project-specific filename conventions)
 qmd-runner                  (pairs with writing-qmd-scientific + writing-r-code; standalone otherwise)
+write-readme                (standalone — reads outputs from creating-analysis-projects layouts)
 ```
 
 **Reading order for newcomers:**
@@ -74,7 +76,8 @@ qmd-runner                  (pairs with writing-qmd-scientific + writing-r-code;
 6. `tailoring-applications` — CV and cover letter pipeline
 7. `md-to-html` — converting finished markdown to polished HTML
 8. `qmd-runner` — when a qmd render fails opaquely and you need surgical chunk-level debugging
-9. `git-hygiene` — version control conventions for all repos
+9. `write-readme` — the front page for any repo you push
+10. `git-hygiene` — version control conventions for all repos
 
 ## Prerequisites
 
