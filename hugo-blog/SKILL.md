@@ -65,6 +65,25 @@ featured: true
 
 ---
 
+## Images
+
+Post images live in `content/posts/images/` as PNG, named `{series}_{what_it_shows}.png`, and are referenced as `/posts/images/{name}.png`.
+
+The alt text renders as a **visible caption** under the image (pandoc emits a `<figcaption>`), so write it as a caption, not a description:
+
+- **Short:** one line, roughly 5 to 10 words
+- **Informative:** say what the image shows or contrasts, not how it is drawn
+- **No visual inventory:** never list panels, colours, characters, labels or icons
+
+| Wrong | Right |
+|---|---|
+| `![Infographic contrasting finding disk usage with du and with dust. The left panel, labelled the old way, shows a tired scientist...]` | `![du, one level at a time, versus dust, one tree]` |
+| `![Side by side comparison of a directory listing rendered by ls and by eza. The left panel...]` | `![The same directory listed by ls and by eza]` |
+
+If a post is drafted with an `IMAGE BRIEF:` placeholder and the image does not exist yet, leave the image line out of the published post rather than shipping a broken image. Add it with a short caption once the image arrives.
+
+---
+
 ## Workflow for adding a post
 
 ### 1. Invoke md-format
@@ -162,3 +181,4 @@ When adding the first post of a new series, add a new row. When adding subsequen
 | Using hyphens in filenames | Use underscores: `tidyverse_to_scverse_part_01.rmd` |
 | Missing blank line before bullet list in .rmd | Apply `md-format` before rendering — pandoc will collapse the list |
 | Committing only the `.rmd` without the `.md` | Stage both files together |
+| Long descriptive alt text on images | It renders as a visible caption; keep it to one short line |
