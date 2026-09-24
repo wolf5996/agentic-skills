@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Report Style"
+  short_description: "Terse, key-points-only reporting with propose-before-editing"
+  default_prompt: "Use $agent-report-style to propose changes briefly and report results in key points only."
