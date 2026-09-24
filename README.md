@@ -45,6 +45,7 @@ Claude Code does not use these files; it reads the YAML frontmatter in `SKILL.md
 | **naming-conventions** | File Organisation | Enforces kebab-case filenames with ISO 8601 dates and zero-padded sequential numbering. Used for bulk media renaming, pipeline outputs, and any file collection where lexicographic sort must match chronological or logical order. |
 | **qmd-runner** | Debugging | Per-chunk `tryCatch` runners for Quarto notebooks. Generator parses each `.qmd`, emits a sibling `.R` runner with one `tryCatch` per `{r}` chunk, and runs them in the global environment so chunk-to-chunk state-sharing matches Quarto render semantics. Surfaces every failing chunk in one pass instead of stopping at the first error, with every fix landing in the source `.qmd`. Catalogues the common Seurat / Bioconductor / biomaRt / msigdbr failure patterns and their fixes. |
 | **write-readme** | Documentation | Fixed, visual structure for root `README.md` files: centred header with badges, At a Glance table, Mermaid pipeline diagram, samples table built from real output CSVs, key design decisions with callouts, PNG figure previews rendered from PDFs with collapsible extras, annotated tracked/untracked repo tree, copy-paste reproduction block, and dependency table. |
+| **agent-report-style** | Communication | Terse, key-points-only agent reporting. Propose changes as one-line "what — why" items and wait for approval before editing; report completed work in 1–3 lines stating what changed, what was left alone, and whether it was tested. |
 
 ## Skill Dependencies
 
@@ -64,6 +65,7 @@ git-hygiene                 (standalone — conventional commit format and branc
 naming-conventions          (standalone — file naming rules; references creating-analysis-projects for project-specific filename conventions)
 qmd-runner                  (pairs with writing-qmd-scientific + writing-r-code; standalone otherwise)
 write-readme                (standalone — reads outputs from creating-analysis-projects layouts)
+agent-report-style          (standalone — reporting and propose-before-editing style for all tasks)
 ```
 
 **Reading order for newcomers:**
@@ -78,6 +80,7 @@ write-readme                (standalone — reads outputs from creating-analysis
 8. `qmd-runner` — when a qmd render fails opaquely and you need surgical chunk-level debugging
 9. `write-readme` — the front page for any repo you push
 10. `git-hygiene` — version control conventions for all repos
+11. `agent-report-style` — how the agent proposes changes and reports back
 
 ## Prerequisites
 
