@@ -20,7 +20,9 @@ author: "Badran Elshenawy"
 date: today
 format:
   html:
-    theme: darkly
+    theme:
+      dark: darkly
+      light: cosmo
     toc: true
     toc-depth: 3
     code-fold: show
@@ -35,6 +37,8 @@ execute:
   message: false
 ---
 ```
+
+- **Theme**: always dark by default. `dark: darkly` is listed first so it loads first; `light: cosmo` is the toggle. Never use a light-only theme
 
 ## Section Structure
 
