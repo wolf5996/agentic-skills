@@ -276,6 +276,19 @@ The section order stays fixed; the content of three sections flexes:
 | **R package** | Exported functions table (Function / Purpose) | Example plot output, rendered from a README example | `remotes::install_github()` + minimal usage example |
 | **Tool / CLI** | Inputs and outputs table | Screenshot or example output | Install + one worked command |
 
+## Rendering This Style as HTML
+
+When the user wants this style as a standalone page (a cheat sheet, a guide), write a `.qmd` and render it with Quarto:
+
+| Element | HTML equivalent |
+|---|---|
+| **Theme** | `theme: {dark: darkly, light: cosmo}` with `dark` listed first so the page opens dark. Never a light-only theme |
+| **Badges** | Centred `::: hero` div of shields.io images (`embed-resources: true` inlines them) |
+| **Callouts** | `::: {.callout-important}`, `.callout-tip`, `.callout-note` instead of `> [!IMPORTANT]` |
+| **Mermaid** | ` ```{mermaid} ` chunk with the same two `classDef` styles |
+| **Keys** | `<kbd>` tags. Any custom CSS must read well on the dark theme |
+| **Pipes in table code** | `<code>a &#124; b</code>`, since `\|` inside backticks renders literally |
+
 ## Common Mistakes
 
 | Mistake | Fix |
