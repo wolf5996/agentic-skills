@@ -68,3 +68,7 @@ ln -s personal_skills/<skill-name> <skill-name>
 - Skills are invoked via the `Skill` tool, not `Read`. Never use `Read` on a SKILL.md to invoke it.
 - The `description` field in frontmatter controls when Claude triggers the skill — make it specific about file types, task types, and contexts.
 - Skills reference each other (see dependency graph in README.md). When changing shared conventions in `writing-r-code`, check downstream skills (`writing-qmd-scientific`, `creating-analysis-projects`).
+
+## Shared Preferences
+
+- **HTML output is dark by default.** Any skill that renders HTML (Quarto, R Markdown) uses `theme: {dark: darkly, light: cosmo}` with `dark` listed first. Never ship a light-only theme

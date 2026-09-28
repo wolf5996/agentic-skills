@@ -33,3 +33,7 @@ Codex discovers user skills from top-level directories in `~/.codex/skills/`. If
 2. Regenerate `agents/openai.yaml` if the human-facing metadata changed
 3. Ensure the top-level symlink exists in `~/.codex/skills/`
 4. Keep naming lowercase and hyphen-separated
+
+## Shared Preferences
+
+- **HTML output is dark by default.** Any skill that renders HTML (Quarto, R Markdown) uses `theme: {dark: darkly, light: cosmo}` with `dark` listed first. Never ship a light-only theme
