@@ -1,9 +1,9 @@
 ---
 name: qmd-runner
-description: Use when debugging Quarto (`.qmd`) notebooks chunk-by-chunk via auto-generated tryCatch runners. Triggers when a `quarto render` fails opaquely, when you need to surface every failing chunk in one pass rather than stop at the first error, when iteratively fixing analysis pipelines (Seurat / Bioconductor / GSEA / biomaRt / msigdbr / clusterProfiler), or when adopting an inherited notebook tree whose chunks no longer execute end-to-end. Workflow: parse the qmd → emit a sibling `.R` runner with one `tryCatch` per `{r}` chunk → run it → fix the source qmd → regenerate the runner → repeat until the PASS / FAIL / SKIP summary table is fully green; then commit the qmd fixes and do a final `quarto render`.
+description: Use when debugging Quarto (`.qmd`) notebooks chunk-by-chunk via auto-generated tryCatch runners. Triggers when a `quarto render` fails opaquely, when you need to surface every failing chunk in one pass rather than stop at the first error, when iteratively fixing analysis pipelines (Seurat / Bioconductor / GSEA / biomaRt / msigdbr / clusterProfiler), or when adopting an inherited notebook tree whose chunks no longer execute end-to-end. Workflow: parse the qmd → emit a sibling `.R` runner with one `tryCatch` per `{r}` chunk → run it → fix the source qmd → regenerate the runner → repeat until the PASS / FAIL / SKIP summary table is fully green; then commit the qmd fixes and do a final `quarto render`. Also use when a qmd whose YAML sets `execute: eval: false` has to be executed for real and must stop at the first error: `--mode execute` emits a fail-fast runner, launched through `resource-watched-run`.
 ---
 
-# QMD Runner Debugging
+# QMD Runner
 
 ## Overview
 
@@ -11,6 +11,8 @@ description: Use when debugging Quarto (`.qmd`) notebooks chunk-by-chunk via aut
 - **Solution**: programmatically extract each `{r}` chunk into a sibling `.R` runner where every chunk is wrapped in `tryCatch`. Run the runner, get a single PASS / FAIL / SKIP table for every chunk in one pass, fix everything, repeat.
 - **Rule**: every fix lands in the **source `.qmd`**. The runner is regenerated from the qmd each iteration — never hand-edit the runner.
 - **End state**: when every chunk is PASS / SKIP, the corresponding `quarto render` will succeed too. Renders go from a debugging tool to a final-output tool.
+- **Two modes**: debug (above: `tryCatch`, every chunk, summary table) and execute (fail-fast, timestamped progress lines, for running a notebook for real). See `## Modes`.
+- **Working directory**: both modes resolve it from the qmd's YAML (`root.dir`, then `execute-dir`, then the qmd's directory) and bake it into the runner as a comment plus `setwd()`.
 
 ## When to Use
 
@@ -19,12 +21,39 @@ description: Use when debugging Quarto (`.qmd`) notebooks chunk-by-chunk via aut
 - Upgrading a key dependency (`Seurat`, `dplyr`, `msigdbr`, `biomaRt`, `clusterProfiler`) and a sweep of qmds needs revalidating
 - Many chunks share in-memory state (e.g. GSEA pipelines where `feature_loadings` flows through several PC chunks) and you want chunk-level isolation of failures
 - Multi-script pipelines where downstream notebooks read checkpoints from upstream notebooks (`creating-analysis-projects` `read → scripts → checkpoints → write` layout) and you want to validate the whole DAG
+- A notebook whose YAML sets `execute: eval: false` (documentation-only render) must actually produce its outputs: `quarto render` executes nothing, so execute mode is the only way to run it as written
+- A long multi-chunk conversion where a later verification chunk must never run on partial outputs (execute mode)
 
 ## When NOT to Use
 
 - Single-chunk qmds where the cost of building a runner exceeds the diagnostic gain — just `quarto render` directly
 - Render failures caused by YAML / front-matter errors (not chunk code) — those need a different fix
 - Producing the polished `.html` artefact — the runner does not invoke Quarto, so the html does not get rebuilt; finish with `quarto render` once chunks are green
+- **Debug mode on a long, heavy pipeline that must not continue past an error:** `tryCatch` keeps going, so a later verification chunk runs on partial outputs and reports a misleading result. Use execute mode
+- **Execute mode for first-time debugging:** it stops at the first error, so each run teaches you one failure. Debug until green first
+
+## Modes
+
+| | Debug (default) | Execute |
+|---|---|---|
+| Flag | `--mode debug` or none | `--mode execute` |
+| Output file | `runners/<basename>.R` | `runners/<basename>-execute.R` |
+| Error handling | `tryCatch` per chunk, keeps going | none; `Rscript` halts at the first error, exit status 1 |
+| Progress | `=== [HH:MM:SS] START/PASS/FAIL ===` | `YYYY-MM-DD HH:MM:SS chunk: <label>` on stderr |
+| End of run | PASS / FAIL / SKIP table, exit 1 if any FAIL | `done in N min` |
+| `#| eval: false` chunks | `skip_chunk()` | `chunk_skip()` message; `--all` includes them |
+| Resume | not applicable | `--from <label>` skips earlier chunks |
+| Launch | foreground `Rscript ... | tee` | always through `resource-watched-run` |
+| Use for | finding every broken chunk | producing the outputs for real |
+
+**Debug until green, then execute:**
+
+1. Debug runner until every chunk is PASS or SKIP (R1 to R2)
+2. Commit the qmd fixes (R3)
+3. `Rscript runners/generate-runner.R --mode execute <qmd>` (E1)
+4. Launch through `resource-watched-run` (E2)
+5. Verify the outputs landed and are complete (E4)
+6. `quarto render` only if the document renders anything; a `execute: eval: false` notebook is already done
 
 ## Workflow
 
@@ -32,6 +61,7 @@ description: Use when debugging Quarto (`.qmd`) notebooks chunk-by-chunk via aut
 
 - Place `runners/generate-runner.R` at the repo root and a matching `.gitignore` exclusion
 - The generator is the only thing that gets committed; per-script runner outputs stay gitignored
+- Copy the generator from the most recent repo that has one; the canonical version supports `--mode`, `--all` and `--from` (see `## The Generator`)
 
 `.gitignore` excerpt:
 
@@ -43,10 +73,12 @@ mcf7/scripts/runners/
 hcc1806/scripts/runners/
 ```
 
+- **Whitelist-style `.gitignore`** (`*` then `!scripts/**`): the `!scripts/**` line re-tracks `scripts/runners/`, so add `scripts/runners/` after it, plus `!runners/generate-runner.R`
+
 ### R1 — Generate runners for every active qmd
 
-- Run `Rscript runners/generate-runner.R <qmd-path>` (or pass several) for every notebook to be debugged
-- Each emits `<dirname(qmd)>/runners/<basename-without-ext>.R`
+- Run `Rscript runners/generate-runner.R <qmd-path>` (or pass several) for every notebook to be debugged; `--mode debug` is the default
+- Each emits `<dirname(qmd)>/runners/<basename-without-ext>.R` (debug) or `<basename-without-ext>-execute.R` (execute)
 - Skip notebooks that are not worth runner-debugging (e.g. credentials-only deployment scripts)
 
 ### R2 — Iterative debug loop
@@ -78,30 +110,29 @@ For each runner, in dependency order (01 → 02 → 03 → ...):
 - Print a per-script PASS table
 - Verify checkpoints and figures landed where expected
 
+### E1 to E4 — Execute mode
+
+Use after the debug table is green, or for a notebook that renders with `execute: eval: false` and has to be run as written.
+
+- **E1 Generate:** `Rscript runners/generate-runner.R --mode execute scripts/01-rda-to-rds.qmd` writes `scripts/runners/01-rda-to-rds-execute.R`. Read the `# Working directory:` comment at the top and confirm it is the directory the qmd's relative paths expect
+
+- **E2 Launch:** always through `resource-watched-run`: pre-flight the machine, launch under `nice -n 10 /usr/bin/time -l` in the background, arm the monitor with `PROGRESS='chunk:'`. Do not repeat the commands here; that skill owns them
+
+- **E3 Resume after a mid-run failure:** fix the qmd, then regenerate with `--from <label>` at the first chunk whose inputs are complete on disk. Chunks before it become `chunk_skip()` lines. The hand alternative, deleting finished chunk blocks from the `-execute.R`, is allowed because execute runners are disposable, but `--from` is reproducible
+
+  - **Caveat:** `--from` also skips a `setup` chunk. Resume only where every input is on disk, which the per-chunk `Libraries / Inputs / Processing / Outputs` structure from `writing-r-code` guarantees
+
+- **E4 Verify:** confirm the expected outputs exist and are complete (row counts, `dim()` tables, file counts), then report with the post-run table from `resource-watched-run`
+
 ## Anatomy of a Runner
 
-Generated runner preamble (every runner starts with this):
+Generated debug runner preamble (every debug runner starts with this):
 
 ```r
-# Locate the project .Rprofile by walking up from getwd() until we find it,
-# then setwd(repo_root) BEFORE sourcing it so renv/activate.R picks the
-# correct project library path. Finally setwd() into the script's directory
-# so the qmd's relative paths (../checkpoints/, ../write/) resolve correctly.
-local({
-  cand <- normalizePath(getwd(), winslash = "/")
-  for (i in 1:8) {
-    if (file.exists(file.path(cand, ".Rprofile")) && file.exists(file.path(cand, "renv/activate.R"))) break
-    parent <- dirname(cand)
-    if (parent == cand) break
-    cand <- parent
-  }
-  Sys.setenv(SMARTSEQ_REPO_ROOT = cand)
-  prev_wd <- getwd()
-  setwd(cand)
-  source(".Rprofile", local = FALSE)
-  setwd(prev_wd)
-})
-setwd(file.path(Sys.getenv("SMARTSEQ_REPO_ROOT"), "<cell-line>/scripts"))
+# Auto-generated by runners/generate-runner.R --mode debug. Do not edit by hand.
+
+# Working directory: knitr opts_knit root.dir ".." in 01-rda-to-rds.qmd
+setwd("/abs/path/to/analysis")
 
 # Chunk-level outcome accumulator.
 RUNNER_RESULTS <- list()
@@ -146,6 +177,36 @@ skip_chunk("<label>")
 
 Summary block at the bottom prints the PASS / FAIL / SKIP table and `quit(status = 1L)` if any FAIL.
 
+When the repo root holds an `.Rprofile`, the preamble sources it from the root first so renv activates the project library, then calls `setwd()`.
+
+### Execute runner
+
+```r
+# Auto-generated by runners/generate-runner.R --mode execute. Do not edit by hand.
+# Fail-fast: no tryCatch. Rscript halts on the first error with exit status 1.
+
+# Working directory: knitr opts_knit root.dir ".." in 01-rda-to-rds.qmd
+setwd("/abs/path/to/analysis")
+
+options(warn = 1)
+RUNNER_T0 <- Sys.time()
+chunk_start <- function(label) message(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), " chunk: ", label)
+chunk_skip <- function(label, reason) message(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), " skip: ", label, " (", reason, ")")
+
+# ---- chunk: convert-kp (qmd line ~72) ----
+chunk_start("convert-kp")
+<chunk body, verbatim, option lines stripped>
+
+# ---- chunk: convert-kf (skipped: before --from convert-kpf) ----
+chunk_skip("convert-kf", "before --from convert-kpf")
+
+# Done ----------
+message(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), " done in ", round(difftime(Sys.time(), RUNNER_T0, units = "mins"), 1), " min")
+```
+
+- **Body stays unindented and outside `quote()`:** R's error message and `Execution halted` line then point at the runner line, and the monitor in `resource-watched-run` greps for `Execution halted`
+- **`options(warn = 1)`:** warnings print as they happen next to the chunk that caused them, instead of piling up at the end
+
 ## The Generator
 
 `runners/generate-runner.R` is responsible for:
@@ -153,9 +214,36 @@ Summary block at the bottom prints the PASS / FAIL / SKIP table and `quit(status
 - Reading the qmd line-by-line
 - Detecting `{r}` chunk opens (` ```{r}` or ` ```{r ...}`) and `` ``` `` closes
 - Lifting `#| label:` and `#| eval:` options out of each chunk header
-- Indenting the chunk body two spaces and wrapping it in `run_chunk(<label>, quote({ ... }))`
-- Emitting one file at `<dirname(qmd)>/runners/<basename-without-ext>.R`
+- Resolving the working directory from the qmd YAML and baking it in as `setwd()`
+- Debug: indenting the chunk body two spaces and wrapping it in `run_chunk(<label>, quote({ ... }))`
+- Execute: emitting `chunk_start(<label>)` followed by the body verbatim
+- Emitting one file at `<dirname(qmd)>/runners/<basename-without-ext>.R` or `-execute.R`
 - Being idempotent: re-running overwrites without prompting
+
+Arguments:
+
+```
+Rscript runners/generate-runner.R [--mode debug|execute] [--all] [--from <label>] <qmd> [<qmd> ...]
+```
+
+| Argument | Effect |
+|---|---|
+| `--mode debug` | default; `tryCatch` runner, summary table |
+| `--mode execute` | fail-fast runner with progress lines |
+| `--all` | include chunks marked `#| eval: false` instead of skipping them (both modes) |
+| `--from <label>` | execute only; chunks before `<label>` become skip lines. Errors if the label is missing or the mode is debug |
+
+### Working directory resolution
+
+Precedence, first hit wins:
+
+1. `root.dir` in the qmd front matter (`knitr: opts_knit: root.dir: ".."`), resolved relative to the qmd's directory, as knitr does
+2. `execute-dir` in the qmd front matter, else in the nearest `_quarto.yml` walking up from the qmd: `project` means the directory holding `_quarto.yml`, `file` means the qmd's directory
+3. The qmd's directory
+
+- The generator reads scalars with `^\s*root\.dir:\s*["']?([^"'#]+?)["']?\s*$` and no nesting tracking, since `root.dir` only ever appears under `knitr: opts_knit:`
+- The resolved path and its source are written as `# Working directory: ...` at the top of the runner, so a wrong-directory failure is diagnosable from the first line
+- Document-level `execute: eval: false` is ignored in both modes: it tells Quarto not to run chunks when rendering, which is exactly the case where a runner is needed. Chunk-level `#| eval: false` is still honoured unless `--all`
 
 Why eval in `.GlobalEnv`: Quarto / knitr renders each chunk into the document's global environment, so any chunk-to-chunk state-sharing (functions defined in chunk 1 used in chunk 5) Just Works. The runner mirrors this exactly so a passing runner predicts a passing render.
 
@@ -185,6 +273,8 @@ These come up over and over on real-world Seurat / Bioconductor pipelines. Fix t
 | Masked-verb or missing-directory errors in the **first** chunk you run | The `setup` chunk was skipped. It registers the conflict preferences and creates the output directories for the whole notebook | Always run `setup` first. It is the one chunk every other chunk depends on |
 | `#\| label:` invalid because a non-comment line precedes it | Something was inserted BEFORE the chunk option lines | Chunk options come first; all code goes in the chunk **body**, after every `#|` line |
 | `there is no package called 'X'` | Package not installed in the renv library | `Rscript -e 'pak::pkg_install("X")'` handles CRAN, Bioconductor, and GitHub sources uniformly |
+| `cannot open file 'read/...'` or `No such file or directory` in the **first** chunk | Working directory resolved to the wrong place | Read the `# Working directory:` comment at the top of the runner and compare with the qmd's `root.dir`; fix the YAML, not the runner |
+| `Execution halted` mid-run in execute mode | Fail-fast did its job; the chunk named in the last `chunk:` line failed | Fix the qmd, regenerate with `--from <label>`, relaunch through `resource-watched-run` |
 
 biomaRt mirror-fallback + cache pattern (the universal fix for the Ensembl errors):
 
@@ -232,10 +322,24 @@ cp hcc1806/checkpoints/01-hcc1806-seurat-clustered.rds \
 ## Tracked vs Gitignored
 
 - **Tracked**: `runners/generate-runner.R` (the generator itself) and the `.gitignore` rules
-- **Gitignored**: every `<script-dir>/runners/<file>.R` and `<file>.log` — these are derivative
+- **Gitignored**: every `<script-dir>/runners/<file>.R`, `<file>-execute.R` and `<file>.log` — these are derivative
+- **Whitelist repos**: `!scripts/**` re-tracks `scripts/runners/`; add `scripts/runners/` after it (see R0)
+
+## Common Mistakes
+
+| Mistake | Fix |
+|---|---|
+| Running the debug runner to produce real outputs | Use `--mode execute`; debug mode continues past a failed chunk and later chunks run on partial outputs |
+| Running an execute runner in the foreground with no `nice`, `time` or monitor | Launch through `resource-watched-run` |
+| Editing the execute runner instead of the qmd | Fix the qmd and regenerate; the only sanctioned hand edit is trimming finished chunks to resume, and `--from` does that reproducibly |
+| Editing the qmd and rerunning the stale runner | Regenerate after every qmd edit |
+| `--from` at a chunk that needs in-memory state from an earlier chunk | Resume only where every input is on disk |
+| Expecting `quarto render` to execute an `execute: eval: false` notebook | It renders prose only; use execute mode for the outputs |
+| Trusting a `# Working directory:` that points at the wrong place | Fix `root.dir` or `execute-dir` in the YAML; the runner follows the YAML |
 
 ## Pairs Well With
 
+- `resource-watched-run` — launches and monitors execute runners under `nice` and `/usr/bin/time`, and owns the kill protocol and post-run report
 - `writing-r-code` — the per-chunk Libraries / Inputs / Processing / Outputs structure that this debugging loop assumes
 - `writing-qmd-scientific` — hashpipe (`#|`) chunk options that the generator parses
 - `creating-analysis-projects` — checkpoint-flow conventions that explain why downstream chunks fail when an upstream notebook has not been re-run
