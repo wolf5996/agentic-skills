@@ -37,7 +37,7 @@ description: Use when debugging Quarto (`.qmd`) notebooks chunk-by-chunk via aut
 | | Debug (default) | Execute |
 |---|---|---|
 | Flag | `--mode debug` or none | `--mode execute` |
-| Output file | `runners/<basename>.R` | `runners/<basename>-execute.R` |
+| Output file | `runners/<basename>-debug.R` | `runners/<basename>-execute.R` |
 | Error handling | `tryCatch` per chunk, keeps going | none; `Rscript` halts at the first error, exit status 1 |
 | Progress | `=== [HH:MM:SS] START/PASS/FAIL ===` | `YYYY-MM-DD HH:MM:SS chunk: <label>` on stderr |
 | End of run | PASS / FAIL / SKIP table, exit 1 if any FAIL | `done in N min` |
@@ -78,14 +78,14 @@ hcc1806/scripts/runners/
 ### R1 — Generate runners for every active qmd
 
 - Run `Rscript runners/generate-runner.R <qmd-path>` (or pass several) for every notebook to be debugged; `--mode debug` is the default
-- Each emits `<dirname(qmd)>/runners/<basename-without-ext>.R` (debug) or `<basename-without-ext>-execute.R` (execute)
+- Each emits `<dirname(qmd)>/runners/<basename-without-ext>-debug.R` (debug) or `<basename-without-ext>-execute.R` (execute), so the filename always states which mode a runner is
 - Skip notebooks that are not worth runner-debugging (e.g. credentials-only deployment scripts)
 
 ### R2 — Iterative debug loop
 
 For each runner, in dependency order (01 → 02 → 03 → ...):
 
-1. `Rscript <runner>.R 2>&1 | tee <runner>.log`
+1. `Rscript <runner>-debug.R 2>&1 | tee <runner>-debug.log`
 2. Read the PASS / FAIL / SKIP table at the bottom
 3. For each FAIL:
    a. Diagnose the underlying error from the runner's `Error:` line
@@ -217,7 +217,7 @@ message(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), " done in ", round(difftime(Sys
 - Resolving the working directory from the qmd YAML and baking it in as `setwd()`
 - Debug: indenting the chunk body two spaces and wrapping it in `run_chunk(<label>, quote({ ... }))`
 - Execute: emitting `chunk_start(<label>)` followed by the body verbatim
-- Emitting one file at `<dirname(qmd)>/runners/<basename-without-ext>.R` or `-execute.R`
+- Emitting one file at `<dirname(qmd)>/runners/<basename-without-ext>-debug.R` or `-execute.R`
 - Being idempotent: re-running overwrites without prompting
 
 Arguments:
@@ -322,7 +322,7 @@ cp hcc1806/checkpoints/01-hcc1806-seurat-clustered.rds \
 ## Tracked vs Gitignored
 
 - **Tracked**: `runners/generate-runner.R` (the generator itself) and the `.gitignore` rules
-- **Gitignored**: every `<script-dir>/runners/<file>.R`, `<file>-execute.R` and `<file>.log` — these are derivative
+- **Gitignored**: every `<script-dir>/runners/<file>-debug.R`, `<file>-execute.R` and their `.log` files — these are derivative
 - **Whitelist repos**: `!scripts/**` re-tracks `scripts/runners/`; add `scripts/runners/` after it (see R0)
 
 ## Common Mistakes
