@@ -43,7 +43,8 @@ Claude Code does not use these files; it reads the YAML frontmatter in `SKILL.md
 | **hugo-blog** | Publishing | End-to-end workflow for publishing posts on the Hugo personal blog. Covers the dual-file `.rmd`/`.md` pattern, hugodown rendering, file naming, YAML front matter, README sync before every push, commit message format, and common mistakes. |
 | **recommendation-letter-workflow** | Academic Applications | Full pipeline for creating and maintaining recommendation letters for PhD and postdoc applications. Quarto-based `.qmd` sources rendered to PDF. Enforces 5-section structure, specificity rules (concrete examples per section), superlative caps, programme-tailored closing sentences, and 2-page maximum length. |
 | **naming-conventions** | File Organisation | Enforces kebab-case filenames with ISO 8601 dates and zero-padded sequential numbering. Used for bulk media renaming, pipeline outputs, and any file collection where lexicographic sort must match chronological or logical order. |
-| **qmd-runner** | Debugging | Per-chunk `tryCatch` runners for Quarto notebooks. Generator parses each `.qmd`, emits a sibling `.R` runner with one `tryCatch` per `{r}` chunk, and runs them in the global environment so chunk-to-chunk state-sharing matches Quarto render semantics. Surfaces every failing chunk in one pass instead of stopping at the first error, with every fix landing in the source `.qmd`. Catalogues the common Seurat / Bioconductor / biomaRt / msigdbr failure patterns and their fixes. |
+| **qmd-runner** | Debugging | Per-chunk runners for Quarto notebooks in two modes. Debug: one `tryCatch` per `{r}` chunk, run in the global environment so state-sharing matches Quarto, every failing chunk surfaced in one pass, every fix landing in the source `.qmd`. Execute: fail-fast runner with timestamped progress lines for running a notebook for real, including `execute: eval: false` notebooks, with `--from <label>` resume. Resolves the working directory from `root.dir` or `execute-dir`. Catalogues the common Seurat / Bioconductor / biomaRt / msigdbr failure patterns and their fixes. |
+| **resource-watched-run** | Operations | Launches heavy local jobs (R, Python, shell) without crippling the machine. Pre-flight RAM, disk and peak-memory estimate; launch under `nice` and `/usr/bin/time` in the background; interval monitor for RSS, free memory, swap and disk with alert thresholds; kill protocol; post-run table of peak RSS, wall time and disk delta. macOS first, Linux equivalents included. |
 | **write-readme** | Documentation | Fixed, visual structure for root `README.md` files: centred header with badges, At a Glance table, Mermaid pipeline diagram, samples table built from real output CSVs, key design decisions with callouts, PNG figure previews rendered from PDFs with collapsible extras, annotated tracked/untracked repo tree, copy-paste reproduction block, and dependency table. |
 | **agent-report-style** | Communication | Terse, key-points-only agent reporting. Propose changes as one-line "what — why" items and wait for approval before editing; report completed work in 1–3 lines stating what changed, what was left alone, and whether it was tested. |
 
@@ -63,7 +64,8 @@ tailoring-applications      (standalone — CV and cover letter pipeline)
 md-to-html                  (standalone — converts .md → .qmd → .html via Quarto)
 git-hygiene                 (standalone — conventional commit format and branching)
 naming-conventions          (standalone — file naming rules; references creating-analysis-projects for project-specific filename conventions)
-qmd-runner                  (pairs with writing-qmd-scientific + writing-r-code; standalone otherwise)
+qmd-runner                  (pairs with writing-qmd-scientific + writing-r-code; execute mode launches via resource-watched-run)
+resource-watched-run        (standalone — launch and monitor any heavy local job; pairs with qmd-runner execute mode)
 write-readme                (standalone — reads outputs from creating-analysis-projects layouts)
 agent-report-style          (standalone — reporting and propose-before-editing style for all tasks)
 ```
@@ -77,10 +79,11 @@ agent-report-style          (standalone — reporting and propose-before-editing
 5. `developing-r-packages` and `writing-labarchive-entries` — advanced/specialized
 6. `tailoring-applications` — CV and cover letter pipeline
 7. `md-to-html` — converting finished markdown to polished HTML
-8. `qmd-runner` — when a qmd render fails opaquely and you need surgical chunk-level debugging
-9. `write-readme` — the front page for any repo you push
-10. `git-hygiene` — version control conventions for all repos
-11. `agent-report-style` — how the agent proposes changes and reports back
+8. `qmd-runner` — when a qmd render fails opaquely and you need surgical chunk-level debugging, or when a notebook has to be executed for real
+9. `resource-watched-run` — launching any job heavy enough to swap or fill the disk
+10. `write-readme` — the front page for any repo you push
+11. `git-hygiene` — version control conventions for all repos
+12. `agent-report-style` — how the agent proposes changes and reports back
 
 ## Prerequisites
 
