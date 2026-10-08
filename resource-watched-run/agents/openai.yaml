@@ -1,0 +1,4 @@
+interface:
+  display_name: "Resource-Watched Run"
+  short_description: "Launch and monitor heavy local jobs under nice and time"
+  default_prompt: "Use $resource-watched-run to pre-flight, launch in the background and monitor this heavy job, then report peak memory and wall time."
