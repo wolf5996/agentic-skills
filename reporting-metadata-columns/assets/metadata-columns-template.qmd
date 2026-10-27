@@ -1,0 +1,428 @@
+---
+title: "<PROJECT> Metadata Columns"
+author: "<AUTHOR>"
+date: today
+format:
+  html:
+    theme:
+      dark: darkly
+      light: cosmo
+    toc: true
+    toc-depth: 3
+    page-layout: full
+    lightbox: true
+    code-fold: true
+    code-tools: true
+    embed-resources: true
+    self-contained: true
+    title-block-banner: true
+engine: knitr
+execute:
+  eval: false
+  warning: false
+  message: false
+---
+
+<!--
+Template from the reporting-metadata-columns skill. Replace every <PLACEHOLDER>:
+  <PROJECT>   project or object name          <AUTHOR>    analyst's full name
+  <PROVIDER>  provider label (e.g. a lab)      <ANALYST>   analyst label (usually a surname)
+  <OBJECT>    delivered object basename        <REPORT>    provider's metadata report file
+Copy the YAML from the project's own numbered notebooks if it differs from the one above.
+Delete this comment when done.
+-->
+
+## Context
+
+- **Purpose**: one reference page for every metadata column on the <PROJECT> object, in the style of the <PROVIDER> report `<REPORT>`
+  - Each column gets a name, category, data type, description and a live summary computed from the object
+- **Two providers**:
+  - **<PROVIDER> columns**: delivered with `read/objects/<OBJECT>.rds`, described with the text of `<REPORT>`
+  - **<ANALYST> columns**: added by this project's numbered notebooks, detected as columns in a checkpoint that are absent from the delivered object
+- **Independent of the pipeline**: the lettered name keeps this notebook outside the numbered chain
+  - It reads checkpoints; no numbered notebook reads anything it writes
+  - Re-render it whenever a numbered notebook writes a new checkpoint
+- **Status**: `undocumented` (in an object, no description), `missing` (described, absent), `pending` (described, its notebook has not run yet)
+- **Rendering**: `quarto render A-metadata-columns.qmd -M eval:true` from `scripts/`
+
+## Checkpoints
+
+| Stage | File | Description |
+|-------------------|------------------|----------------------------------|
+| Input | `../read/objects/<OBJECT>.rds` | <PROVIDER> delivery, read-only |
+| Input | `../checkpoints/01-<NAME>.rds` | Columns added by 01 |
+| Snapshot | `../checkpoints/A-metadata-snapshot.rds` | `meta.data` of every available object, rebuilt only when an input changes |
+| Registry | `../write/tables/A-metadata-columns/A-metadata-columns.csv` | One row per column with status and live summary |
+
+## Setup
+
+- **Conflicts**: `dplyr` verbs win
+- **Output directories**: the flat checkpoint directory and one table subdirectory for this notebook
+
+```{r}
+#| label: setup
+
+# Libraries ----------
+library(conflicted)
+
+# Conflicts ----------
+conflicts_prefer(
+  dplyr::filter, dplyr::count, dplyr::rename, dplyr::slice, dplyr::select,
+  dplyr::first, dplyr::last, dplyr::desc, dplyr::lag,
+  purrr::reduce,
+  base::intersect, base::setdiff, base::union,
+  .quiet = TRUE
+)
+
+# Output directories ----------
+dir.create("../checkpoints", recursive = TRUE, showWarnings = FALSE)
+
+dir.create("../write/tables/A-metadata-columns",
+           recursive = TRUE, showWarnings = FALSE)
+```
+
+## Card Renderer
+
+- **What it draws**: self-contained HTML cards grouped by category, colour-coded by category and data type
+- **Shared**: the two card chunks below call this function, so run this chunk after `setup`
+
+```{r}
+#| label: card-renderer
+
+# Paste the full contents of references/render-metadata-cards.R from the
+# reporting-metadata-columns skill here, then edit default_category_colours
+# if the provider report uses different categories or hex codes.
+```
+
+## Metadata Snapshot
+
+- **One read per object**: read, keep `meta.data`, `rm()` + `gc()`, next object
+- **Sources in pipeline order**: the first source holding a column is credited with adding it
+  - A source that does not exist yet is skipped
+- **Rebuild rule**: reuse the snapshot while the available sources and their modification times are unchanged
+- **Adding a stage**: append one row to `sources`
+
+```{r}
+#| label: metadata-snapshot
+
+# Libraries ----------
+library(conflicted)
+library(SeuratObject)
+library(readr)
+library(dplyr)
+library(tibble)
+library(purrr)
+
+# Inputs ----------
+sources <- tribble(
+  ~stage,      ~notebook,           ~path,
+  "delivered", "<PROVIDER> delivery", "../read/objects/<OBJECT>.rds",
+  "01",        "01-<NAME>.qmd",     "../checkpoints/01-<NAME>.rds"
+) |>
+  mutate(exists = file.exists(path),
+         modified = as.numeric(file.mtime(path)))
+
+snapshot_path <- "../checkpoints/A-metadata-snapshot.rds"
+
+# Metadata reader function ----------
+read_metadata <- function(path) {
+  seu <- read_rds(path)
+  metadata <- as_tibble(seu[[]], rownames = ".cell")
+  rm(seu)
+  gc(verbose = FALSE)
+  metadata
+}
+
+# Processing ----------
+if (!any(sources$exists)) stop("No source object exists; check the paths in `sources`")
+
+snapshot_fresh <- file.exists(snapshot_path) &&
+  identical(select(read_rds(snapshot_path)$sources, stage, exists, modified),
+            select(sources, stage, exists, modified))
+
+if (snapshot_fresh) {
+  snapshot <- read_rds(snapshot_path)
+} else {
+  available <- filter(sources, exists)
+  snapshot <- list(
+    sources = sources,
+    metadata = map(set_names(available$path, available$stage), read_metadata)
+  )
+}
+
+snapshot_overview <- snapshot$sources |>
+  mutate(cells = map_int(stage, \(s) if (s %in% names(snapshot$metadata)) nrow(snapshot$metadata[[s]]) else NA_integer_),
+         columns = map_int(stage, \(s) if (s %in% names(snapshot$metadata)) ncol(snapshot$metadata[[s]]) - 1L else NA_integer_),
+         modified = as.POSIXct(modified, origin = "1970-01-01")) |>
+  select(stage, notebook, path, exists, cells, columns, modified)
+
+# Outputs ----------
+if (!snapshot_fresh) write_rds(snapshot, snapshot_path)
+
+snapshot_overview
+```
+
+## Column Registry
+
+- **<PROVIDER> descriptions**: transcribed from `<REPORT>`, wording kept, HTML dropped
+  - `report_name_fixes` maps report names to the object's spelling, with the evidence
+  - `provider_extra` describes delivered columns the report omits; marked as written here
+- **<ANALYST> descriptions**: each names the notebook expected to add it, so a not-yet-run column reads `pending`
+- **Families**: a prefix plus the expected member names; observed prefix matches are added too
+- **Live summaries**: from the first source holding the column, following the declared type
+
+```{r}
+#| label: column-registry
+
+# Libraries ----------
+library(conflicted)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(purrr)
+library(stringr)
+library(knitr)
+
+# Inputs ----------
+snapshot <- read_rds("../checkpoints/A-metadata-snapshot.rds")
+
+family_members <- character(0)   # e.g. names(read_rds("../checkpoints/02-gene-sets.rds"))
+
+# Provider descriptions ----------
+provider_registry <- tribble(
+  ~name, ~category, ~type, ~description,
+  "orig.ident", "Sample metadata", "categorical", "<description from the report>",
+  "nCount_RNA", "QC metrics", "continuous", "<description from the report>"
+) |>
+  mutate(provider = "<PROVIDER>", added_in = "<PROVIDER> delivery", family = NA_character_,
+         description_source = "<REPORT>", registry_note = NA_character_)
+
+# Provider spelling fixes ----------
+report_name_fixes <- tibble(report_name = character(), object_name = character(), evidence = character())
+# |> add_row(report_name = "Cell_Subtype_X", object_name = "Cell_subtype_X", evidence = "same name apart from case")
+
+provider_registry <- provider_registry |>
+  left_join(report_name_fixes, by = c("name" = "report_name")) |>
+  mutate(registry_note = if_else(is.na(object_name), registry_note,
+                                 paste0("named `", name, "` in the provider report; ", evidence)),
+         name = coalesce(object_name, name)) |>
+  select(-object_name, -evidence)
+
+# Delivered columns missing from the report ----------
+provider_extra <- tibble(name = character(), category = character(), type = character(), description = character()) |>
+  mutate(provider = "<PROVIDER>", added_in = "<PROVIDER> delivery", family = NA_character_,
+         description_source = "this notebook",
+         registry_note = "not in the provider report; description added here")
+
+# Analyst descriptions ----------
+analyst_registry <- tribble(
+  ~name, ~category, ~type, ~added_in, ~description,
+  "<new_column>", "Cell state & classification", "categorical", "01-<NAME>.qmd", "<what it holds and the rule that built it>"
+) |>
+  mutate(provider = "<ANALYST>", family = NA_character_)
+
+# Analyst column families ----------
+analyst_families <- tibble(family = character(), category = character(), type = character(),
+                           added_in = character(), description = character())
+# |> add_row(family = "SCORE_", category = "Signature scores", type = "continuous",
+#             added_in = "02-<NAME>.qmd", description = "<method, input layer, normalisation>")
+
+all_columns <- snapshot$metadata |>
+  map(\(metadata) setdiff(names(metadata), ".cell")) |>
+  reduce(union, .init = character(0))
+
+family_registry <- analyst_families |>
+  mutate(name = map(family, \(prefix) union(paste0(prefix, family_members),
+                                            str_subset(all_columns, paste0("^", prefix))))) |>
+  unnest(name) |>
+  mutate(provider = "<ANALYST>")
+
+described <- bind_rows(provider_registry, provider_extra, analyst_registry, family_registry) |>
+  mutate(description_source = coalesce(description_source, "this notebook"))
+
+# Column detection ----------
+first_seen <- snapshot$metadata |>
+  imap(\(metadata, stage) tibble(name = setdiff(names(metadata), ".cell"), stage = stage)) |>
+  list_rbind() |>
+  distinct(name, .keep_all = TRUE) |>
+  left_join(select(snapshot$sources, stage, notebook), by = "stage")
+
+latest_stage <- last(names(snapshot$metadata))
+latest_columns <- setdiff(names(snapshot$metadata[[latest_stage]]), ".cell")
+
+# Live summary function ----------
+empty_summary <- tibble(class = NA_character_, n_cells = NA_integer_, n_na = NA_integer_,
+                        n_levels = NA_integer_, top_levels = NA_character_,
+                        min = NA_real_, median = NA_real_, max = NA_real_)
+
+summarise_column <- function(values, type) {
+  base <- tibble(class = class(values)[1], n_cells = length(values), n_na = sum(is.na(values)))
+  if (type == "continuous" && is.numeric(values)) {
+    finite <- values[is.finite(values)]
+    mutate(base, n_levels = NA_integer_, top_levels = NA_character_,
+           min = if (length(finite)) min(finite) else NA_real_,
+           median = if (length(finite)) median(finite) else NA_real_,
+           max = if (length(finite)) max(finite) else NA_real_)
+  } else {
+    level_counts <- sort(table(values, useNA = "no"), decreasing = TRUE)
+    top <- head(level_counts, 3)
+    mutate(base, n_levels = length(level_counts),
+           top_levels = if (length(level_counts) > 1 && all(level_counts == 1)) {
+             "every value unique"
+           } else {
+             paste0(names(top), " (", format(as.integer(top), big.mark = ",", trim = TRUE), ")",
+                    collapse = "; ")
+           },
+           min = NA_real_, median = NA_real_, max = NA_real_)
+  }
+}
+
+# Registry ----------
+available_notebooks <- snapshot$sources |>
+  filter(exists) |>
+  pull(notebook)
+
+undocumented <- first_seen |>
+  filter(!name %in% described$name) |>
+  mutate(type = map2_chr(name, stage, \(column, stage) {
+    if (is.numeric(snapshot$metadata[[stage]][[column]])) "continuous" else "categorical"
+  })) |>
+  transmute(name, type, provider = if_else(stage == "delivered", "<PROVIDER>", "<ANALYST>"),
+            category = "Unassigned", family = NA_character_, description = NA_character_,
+            description_source = NA_character_)
+
+registry <- bind_rows(described, undocumented) |>
+  left_join(first_seen, by = "name") |>
+  mutate(summary = pmap(list(name, stage, type), \(column, stage, type) {
+    if (is.na(stage)) empty_summary else summarise_column(snapshot$metadata[[stage]][[column]], type)
+  })) |>
+  unnest(summary) |>
+  mutate(
+    present = !is.na(notebook),
+    added_in = coalesce(notebook, added_in),
+    in_latest = name %in% latest_columns,
+    status = case_when(
+      is.na(description) ~ "undocumented",
+      present ~ "documented",
+      !added_in %in% available_notebooks ~ "pending",
+      .default = "missing"
+    ),
+    note = case_when(
+      status == "undocumented" ~ "type inferred from class",
+      present & type == "continuous" & !class %in% c("numeric", "integer") ~ paste("described continuous but stored as", class),
+      provider == "<PROVIDER>" & present & !in_latest ~ paste("dropped before", latest_stage),
+      .default = registry_note
+    )
+  ) |>
+  select(provider, name, family, category, type, description, description_source, added_in,
+         status, present, in_latest, class, n_cells, n_na, n_levels, top_levels,
+         min, median, max, note)
+
+registry_counts <- registry |>
+  count(provider, status) |>
+  pivot_wider(names_from = status, values_from = n, values_fill = 0)
+
+# Outputs ----------
+write_csv(registry, "../write/tables/A-metadata-columns/A-metadata-columns.csv", na = "")
+
+kable(registry_counts, caption = "Columns per provider and status")
+```
+
+## <PROVIDER> Columns
+
+- **Source**: every column in the `meta.data` of `read/objects/<OBJECT>.rds`
+- **Summaries**: computed on the delivered object
+
+```{r}
+#| label: provider-cards
+#| output: asis
+
+# Libraries ----------
+library(conflicted)
+library(readr)
+library(dplyr)
+
+# Inputs ----------
+registry <- read_csv("../write/tables/A-metadata-columns/A-metadata-columns.csv",
+                     col_types = cols(.default = col_character(),
+                                      present = col_logical(), in_latest = col_logical(),
+                                      n_cells = col_double(), n_na = col_double(),
+                                      n_levels = col_double(), min = col_double(),
+                                      median = col_double(), max = col_double()))
+
+# Processing ----------
+provider_cards <- registry |>
+  filter(provider == "<PROVIDER>") |>
+  render_metadata_cards(supplier = "<PROVIDER>")
+
+# Outputs ----------
+cat(provider_cards)
+```
+
+## <ANALYST> Columns
+
+- **Source**: columns in a numbered checkpoint that are absent from the delivered object
+  - The pill on each card names the notebook whose checkpoint first holds the column
+
+```{r}
+#| label: analyst-cards
+#| output: asis
+
+# Libraries ----------
+library(conflicted)
+library(readr)
+library(dplyr)
+
+# Inputs ----------
+registry <- read_csv("../write/tables/A-metadata-columns/A-metadata-columns.csv",
+                     col_types = cols(.default = col_character(),
+                                      present = col_logical(), in_latest = col_logical(),
+                                      n_cells = col_double(), n_na = col_double(),
+                                      n_levels = col_double(), min = col_double(),
+                                      median = col_double(), max = col_double()))
+
+# Processing ----------
+analyst_cards <- registry |>
+  filter(provider == "<ANALYST>") |>
+  render_metadata_cards()
+
+# Outputs ----------
+cat(analyst_cards)
+```
+
+## Registry Checks
+
+- **Undocumented**: add a registry row
+- **Missing**: the column was renamed or dropped upstream; fix or remove its row
+- **Pending**: re-render after the named notebook writes its checkpoint
+- **Notes**: documented rows that deviate from the provider report, kept visible
+
+```{r}
+#| label: registry-checks
+
+# Libraries ----------
+library(conflicted)
+library(readr)
+library(dplyr)
+library(knitr)
+
+# Inputs ----------
+registry <- read_csv("../write/tables/A-metadata-columns/A-metadata-columns.csv",
+                     col_types = cols(.default = col_character()))
+
+# Processing ----------
+flagged <- registry |>
+  filter(status != "documented" | !is.na(note)) |>
+  mutate(group = coalesce(family, name)) |>
+  group_by(provider, group, status, added_in, note) |>
+  summarise(columns = n(), .groups = "drop") |>
+  arrange(provider, status, group)
+
+# Outputs ----------
+if (nrow(flagged) == 0) {
+  cat("Every column is documented and present.\n")
+} else {
+  kable(flagged, caption = "Flagged columns and deviations from the provider report (families collapsed to one row)")
+}
+```

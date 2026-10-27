@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reporting Metadata Columns"
+  short_description: "Provider vs analyst metadata column report with colour-coded cards and honesty checks"
+  default_prompt: "Use $reporting-metadata-columns to build a lettered A-metadata-columns.qmd that detects Seurat metadata columns from each object, splits provider and analyst columns, renders colour-coded cards with live summaries, groups score-column families, writes a registry CSV and flags undocumented, missing and pending columns."
