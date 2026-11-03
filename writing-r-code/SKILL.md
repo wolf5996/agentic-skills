@@ -265,6 +265,12 @@ ggsave("../write/figures/01-processing-pipeline/01-overview.pdf",
 | Heatmaps | SCpubr | `do_EnrichedHeatmapPlot` — not in BadranSeq |
 | Nebulosa density | SCpubr/Nebulosa | Not in BadranSeq |
 
+### Alternative Views in Tabsets
+
+- **When one question gets several plots** (per genotype, per contrast, a figure and its table, an overview and a zoom), put each in its own chunk inside a Quarto `panel-tabset` rather than stacking them or cramming them into one `patchwork` figure
+  - Each tab chunk stays self-contained, sized and saved like any other figure chunk
+  - Syntax and rules: `writing-qmd-scientific`, *Tabsets*
+
 ## Common Mistakes
 
 | Mistake | Correct Approach |

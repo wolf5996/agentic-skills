@@ -191,6 +191,44 @@ write_rds(seu_filtered, "../checkpoints/dataset_seu_filtered.rds")
 - Cells removed: ~3,000 (~17%)
 ```
 
+### Tabsets
+
+- **Alternative views of one result go in a tabset**, not stacked down the page: the figure and the table of the same numbers, one tab per genotype, contrast or sample, an overview and a zoom
+  - The section stays one screen long and the reader picks the view
+- **Syntax**: a `panel-tabset` div; each heading one level below the section heading inside it becomes a tab
+
+````markdown
+## Composition Per Tumour
+
+- **Rationale and findings bullets stay here, above the tabset**
+
+::: {.panel-tabset}
+### Figure
+
+```{r}
+#| label: fig-composition
+#| fig-cap: "Cells per tumour by cell type, split by the malignant call."
+#| fig-width: 12
+#| fig-height: 7.5
+```
+
+### Table
+
+```{r}
+#| label: tbl-composition
+#| tbl-cap: "Cells per tumour and malignant call."
+```
+:::
+````
+
+- **Rules**:
+  - Prose stays above the div, never inside one tab only, so it is read whichever tab is open
+  - Every tab's chunk follows the usual rules: self-contained, labelled `fig-`/`tbl-` with a caption, explicit `fig-width`/`fig-height`, saved to `write/`
+  - Tab headings are short nouns: "Figure", "Table", "EZHIPp53 vs KP"
+  - `::: {.panel-tabset group="contrast"}` synchronises every tabset with the same `group`: choosing "vs KPP" in one switches them all
+  - One level of tabs only; no tabset inside a tab
+  - **HTML only**: `docx` and `pdf` render the tabs as consecutive sections, so a Word report still shows every tab
+
 ## Table Usage Patterns
 
 - **Tables** serve specific roles in QMD documents:
@@ -266,5 +304,6 @@ project_name/
 | Numbered section headings | Use descriptive headers without numbers — let the TOC handle navigation |
 | Flat bullet points without hierarchy | Use nested bullets: bold term → detail → rationale |
 | Tables without context | Introduce every table with a sentence explaining its purpose |
+| Several plots of the same result stacked down the page | One `panel-tabset`, one tab per view, the prose above the div |
 | Chunk options inside `{r ...}` | Use `#|` hashpipe syntax on separate lines inside the chunk |
 | Dot-separated option names (`fig.width`) | Use kebab-case (`fig-width`) with hashpipe syntax |
