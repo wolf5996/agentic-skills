@@ -25,7 +25,7 @@ format:
       light: cosmo
     toc: true
     toc-depth: 3
-    code-fold: show
+    code-fold: true
     code-tools: true
     embed-resources: true
     self-contained: true
@@ -256,6 +256,32 @@ write_rds(seu_filtered, "../checkpoints/dataset_seu_filtered.rds")
   - One level of tabs only; no tabset inside a tab
   - **HTML only**: `docx` and `pdf` render the tabs as consecutive sections, so a Word report still shows every tab
 
+### Findings Boxes and the Summary of Findings
+
+- **Every analysis section states its findings in a box**: after the rationale bullets and before the chunks and tabsets, a `callout-tip` titled "Findings" with one bullet per result
+  - Bold claim first, then the numbers: what the section found, not what it did
+  - Numbers come from the rendered tables; write the box after the chunks have run and the figures have been looked at
+- **The document ends with `## Summary of Findings`**: a numbered list, one item per finding across all sections, each ending with the `@fig-` or `@tbl-` that backs it. This is the list the reader goes through
+- **Code is folded by default**: `code-fold: true` with `code-tools: true` in the YAML; the `</> Code` menu at the top shows or hides all code
+
+```markdown
+## Composition Per Tumour
+
+- **Malignant call first**: rationale bullets as usual
+
+::: {.callout-tip title="Findings"}
+- **8006_KPP has no malignant cells** (785 normal cells), so KPP has two tumour replicates
+- **GFP would lose 8–16 % of EZHIP malignant cells**: the `malignant` column, not GFP, defines tumour cells
+:::
+
+(chunks and tabsets)
+
+## Summary of Findings
+
+1. **KPP has two tumour replicates, not three**: 8006_KPP has no malignant cells (@fig-malignant-call)
+2. **GFP is the wrong gate for EZHIP tumours** (@fig-gfp)
+```
+
 ## Table Usage Patterns
 
 - **Tables** serve specific roles in QMD documents:
@@ -332,6 +358,7 @@ project_name/
 | Flat bullet points without hierarchy | Use nested bullets: bold term → detail → rationale |
 | Tables without context | Introduce every table with a sentence explaining its purpose |
 | Several plots of the same result stacked down the page | One `panel-tabset`, one tab per view, the prose above the div |
+| Results left for the reader to dig out of figures and tables | A Findings box per section and a numbered Summary of Findings at the end |
 | Chunk options inside `{r ...}` | Use `#|` hashpipe syntax on separate lines inside the chunk |
 | Dot-separated option names (`fig.width`) | Use kebab-case (`fig-width`) with hashpipe syntax |
 | Figure chunk without `fig-width`/`fig-height` | Set both on every figure chunk, sized by content; defaults squash facets and labels |
