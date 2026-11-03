@@ -111,6 +111,33 @@ Rules for prose:
 
 - **Naming**: hashpipe options use kebab-case (`fig-width`, `fig-height`, `fig-cap`) rather than legacy dot-separated names (`fig.width`)
 
+### Figure Chunks
+
+- **Every chunk that prints a plot sets `fig-width` and `fig-height`**: the 7 × 5 in default squashes anything with facets, long labels or a legend. Size by content (see `writing-r-code`, *Figure Sizing and Readability*)
+  - The same numbers go into the chunk's `ggsave()` so the saved PDF matches what the document shows
+- **Document-level defaults** go in the YAML so a forgotten chunk is still readable, and so `ragg_png` is used (compute nodes have no X11):
+
+```yaml
+knitr:
+  opts_chunk:
+    dev: ragg_png
+    fig-width: 9
+    fig-height: 6.5
+    fig-dpi: 300
+```
+
+- **Word reports (`format: docx`)** scale images to the text width, about 6.5 in: keep `fig-width` ≤ 9 and set theme `base_size` to 15–16 so text stays ≥ 10 pt after scaling. Never place two full-size plots side by side in one figure; make two figures
+- **Captions and cross-references**: label figure chunks `fig-<name>` with a `fig-cap`, tables `tbl-<name>` with a `tbl-cap`, and refer to them in prose as `@fig-name` / `@tbl-name`
+- **Check the render**: open the rendered figure (or rasterise the saved PDF) before declaring the chunk done
+
+```markdown
+```{r}
+#| label: fig-marker-panels
+#| fig-cap: "Lineage markers per sample. Log2 normalised counts; boxes show the three replicates of each line."
+#| fig-width: 10
+#| fig-height: 7
+```
+
 ### Setup Chunk
 
 - **Every document opens with one `setup` chunk** under its own `## Setup` heading, placed after the `## Context` and `## Checkpoints` prose and before the first analysis section
@@ -307,3 +334,5 @@ project_name/
 | Several plots of the same result stacked down the page | One `panel-tabset`, one tab per view, the prose above the div |
 | Chunk options inside `{r ...}` | Use `#|` hashpipe syntax on separate lines inside the chunk |
 | Dot-separated option names (`fig.width`) | Use kebab-case (`fig-width`) with hashpipe syntax |
+| Figure chunk without `fig-width`/`fig-height` | Set both on every figure chunk, sized by content; defaults squash facets and labels |
+| A biological claim in prose with no figure or table behind it | Every statement about a gene, marker or pathway points at a `@fig-` or `@tbl-` that shows it |

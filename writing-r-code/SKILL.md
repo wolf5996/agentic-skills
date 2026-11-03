@@ -271,6 +271,73 @@ ggsave("../write/figures/01-processing-pipeline/01-overview.pdf",
   - Each tab chunk stays self-contained, sized and saved like any other figure chunk
   - Syntax and rules: `writing-qmd-scientific`, *Tabsets*
 
+### Bulk RNA-seq and tabular data
+
+BadranSeq's `do_*Plot` functions take Seurat objects, so for bulk RNA-seq, DESeq2 results, or any tibble of values, work in this order:
+
+1. **Existing packages first**: `EnhancedVolcano` (volcano), `BadranSeq::do_GseaPlot` (GSEA bars), `enrichplot::gseaplot2` (running score), `ComplexHeatmap` (any heatmap), `ggstatsplot::ggbetweenstats` (group comparisons with a real *n*, such as hundreds of genes per group — not 3 replicates per line), `ggrepel` for labels
+2. **ggplot2 from scratch** only when no package draws the plot you need (per-gene box + jitter panels with DESeq2 `padj` annotated, NES dot plots, LFC-vs-LFC scatters)
+3. **Pair every marker claim with a plot and a table**: a statement that a gene is "high" or "low" in a group is backed by a per-sample box/violin/jitter panel *and* a table of means plus the test statistic. Never a heatmap alone
+
+## Figure Sizing and Readability
+
+**A squashed figure is a bug.** Every plot must be readable when saved and when rendered: no overlapping labels, no panels narrower than their content, no 6 pt text. This applies to the saved PDF, the chunk output in HTML, and images embedded in Word reports.
+
+### Rules
+
+- **Set the size on every figure chunk and every `ggsave()`**: never rely on the 7 × 5 in default. The chunk's `fig-width`/`fig-height` and the `ggsave(width, height)` carry the same numbers (or `ggsave` is larger), so the file and the rendered chunk match
+- **Size by content, not by habit**:
+  - Facet panels: at least 2.5 in wide and 2.2 in tall each (a 4 × 3 grid of panels is at least 10 × 7 in)
+  - Heatmaps: 0.25–0.3 in per row plus 1.5 in for annotations and legends; wide when there are many columns
+  - Bar and dot plots with long category labels: height = 0.35 in per category + 1.5 in
+  - Volcano plots and PCA: 9 × 8 in or larger when labels are drawn
+  - Use `limitsize = FALSE` in `ggsave()` for tall figures
+- **Fonts are big**: `theme_*(base_size = 14)` minimum in notebooks; 15–16 in report figures that a page will scale down. Axis text ≥ 12 pt, strip text ≥ 13 pt bold, titles ≥ 16 pt. Legend keys sized to match (`legend.key.size = unit(1, "lines")` or larger)
+- **One theme helper per project**, applied to every plot, so size and style are set once:
+
+```r
+theme_report <- function(base_size = 15) {
+  theme_bw(base_size = base_size) +
+    theme(
+      panel.grid.minor = element_blank(),
+      strip.background = element_rect(fill = "grey92", colour = NA),
+      strip.text = element_text(face = "bold", size = base_size - 1),
+      axis.text = element_text(size = base_size - 2),
+      legend.position = "bottom",
+      plot.title = element_text(face = "bold", size = base_size + 2)
+    )
+}
+```
+
+- **Long labels wrap, they never rotate 90°**: `scales::label_wrap(30)` on the axis or `stringr::str_wrap()` on the data. Use `ggrepel` for point labels with `max.overlaps = Inf` and check nothing is dropped
+- **Word and PDF reports scale images to the text width (about 6.5 in)**: keep `fig-width` ≤ 9 and raise `base_size` to 15–16 so text is still ≥ 10 pt after scaling. A 14 in wide figure shrunk to 6.5 in has 7 pt text. Set `fig-dpi: 300` in the YAML so the embedded PNG stays sharp
+- **Multi-panel figures get the full size they need**: with `patchwork`, add the panel sizes together rather than cramming two 9 in plots into one 9 in figure. Two volcano plots are two figures, not one
+- **ComplexHeatmap** and other grid graphics: set `row_names_gp = gpar(fontsize = 12)`, `column_names_gp`, `row_title_gp` and `heatmap_legend_param = list(title_gp = gpar(fontsize = 13), labels_gp = gpar(fontsize = 12))` explicitly; the defaults are too small
+- **Look at the output**: rasterise the saved PDF (`convert -density 60 file.pdf[0] file.png`) and read the image before declaring a figure done. If a label is cut, a panel squashed, or text unreadable, resize and re-render
+
+### Pattern
+
+```r
+#| label: fig-marker-panels
+#| fig-width: 10
+#| fig-height: 7
+
+plot_markers <- expr_df |>
+  filter(symbol %in% markers) |>
+  ggplot(aes(x = cell_line, y = log2_count, fill = cell_line)) +
+  geom_boxplot(width = 0.6, outlier.shape = NA, alpha = 0.6) +
+  geom_jitter(width = 0.15, size = 2.5, shape = 21, colour = "black") +
+  facet_wrap(~ symbol, ncol = 4, scales = "free_y") +
+  scale_fill_manual(values = line_colours) +
+  labs(x = NULL, y = expression(log[2]("normalised count" + 1))) +
+  theme_report()
+
+ggsave("../write/figures/04-results-report/04-marker-panels.pdf",
+       plot_markers, width = 10, height = 7, bg = "white", limitsize = FALSE)
+
+plot_markers
+```
+
 ## Common Mistakes
 
 | Mistake | Correct Approach |
@@ -288,3 +355,9 @@ ggsave("../write/figures/01-processing-pipeline/01-overview.pdf",
 | Repeating `conflicts_prefer()` or `dir.create()` in every chunk | Both belong in the one `setup` chunk at the top of the script. Repeating them is the boilerplate that buries the analysis |
 | Putting the setup chunk behind `include: false` | Keep it visible — conflict handling is a methodological choice, not boilerplate to hide |
 | Saving figures flat under `write/figures/` | Use the per-script subdir `write/figures/<NN-script-slug>/<NN-name>.pdf`; same for `write/tables/`. Checkpoints stay flat in `checkpoints/`. |
+| Figure chunk or `ggsave()` without explicit size, or a 12-panel facet at 7 × 5 in | Set `fig-width`/`fig-height` and `ggsave(width, height)` on every figure, sized by content (see *Figure Sizing and Readability*) |
+| Default theme font sizes (11 pt) in saved or report figures | `base_size = 14` minimum, 15–16 for report figures that get scaled to page width |
+| Two full-size plots crammed side by side into one figure | Give each its own figure, or sum the widths |
+| Rotated 90° axis labels | Wrap with `scales::label_wrap()` / `str_wrap()` and widen the figure |
+| Declaring a figure done without looking at it | Rasterise the PDF and read it; fix squashed panels, cut labels or tiny text before moving on |
+| A marker "is high in X" stated from a heatmap or from memory | Back it with a per-sample box/jitter panel and a table of means with the test statistic |

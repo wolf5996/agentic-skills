@@ -10,7 +10,7 @@ description: Use when setting up a new R or bioinformatics analysis project, sca
 Scaffold R/bioinformatics analysis projects with a strict separation between code (version-controlled) and data/outputs (not tracked). Git lives at the **project root** with a whitelist `.gitignore` that tracks only `scripts/`. Every notebook is self-contained. Every convention is enforced by structure, not discipline.
 
 **REQUIRED SUB-SKILLS:**
-- Use `writing-r-code` for all R code generation
+- Use `writing-r-code` for all R code generation, including its *Figure Sizing and Readability* rules: every figure chunk and `ggsave()` carries an explicit size, fonts are `base_size = 14` or larger, and nothing is declared done until the rendered figure has been looked at
 - Use `writing-qmd-scientific` for all QMD document structure
 - Use `superpowers:brainstorming` when designing a new pipeline from scratch
 - Use `superpowers:writing-plans` when the pipeline has 3+ notebooks to implement
